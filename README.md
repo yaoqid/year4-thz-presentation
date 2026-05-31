@@ -5,6 +5,7 @@ This repository contains the final presentation deck and the source material use
 ## Final Presentation
 
 - `presentation/year4-thz-electric-field-presentation.pptx` - editable PowerPoint presentation generated from the project report, MATLAB code, supplied marking rubric, presentation guidance, and UCL/EEE PowerPoint template.
+- `presentation/yaoqi-electric-field-part-presentation.pptx` - focused 8-slide deck for Yaoqi Dong's contribution only: Electric Field Theory, Electric Field Computation, Far-field THz Angular Emission Validation, Custom Model Results, and Bipolar Pulse Waveform.
 
 ## Repository Contents
 
