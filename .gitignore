@@ -1,0 +1,14 @@
+# Local generation workspace and render scratch
+outputs/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+~$*
+
+# MATLAB generated files
+*.asv
+*.m~
+
+# PowerPoint temporary files
+*.tmp

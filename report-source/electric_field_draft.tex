@@ -1,0 +1,122 @@
+\documentclass[12pt]{interim_report}
+\usepackage{amsmath,amsthm,graphicx}
+
+\title{Electric Field Computation -- Draft}
+\author{Yaoqi Dong}
+\date{\today}
+\supervisor{Professor Oleg Mitrofanov}
+\aiuse{}
+\wordcount{}
+
+\begin{document}
+
+\maketitle
+
+\section{Technical Background: Electric Field Radiation}
+
+\subsection{From Photocurrent to Electromagnetic Radiation}
+The fundamental link between ultrafast photocurrents and terahertz emission lies in classical electrodynamics. When a femtosecond laser pulse excites a semiconductor surface, it generates a transient current density $\mathbf{J}(\mathbf{r}', t)$ through mechanisms such as the Photo-Dember effect and surface depletion field drift. Since this current varies on a sub-picosecond timescale, it radiates electromagnetic energy in the terahertz frequency range~\cite{Yang2023}. This principle was first experimentally verified by Auston et al.~\cite{auston_picosecond_1984}, who demonstrated that the far-field radiation from a transient current source is proportional to the first time derivative of the dipole moment. Recent studies have further shown that similar transient photocurrent mechanisms drive THz emission in semiconductor heterostructures, where ballistic photocurrents across band offsets produce measurable radiation pulses~\cite{Malevich2021}. The theoretical framework employed in this project treats each infinitesimal current element on the semiconductor surface as a Hertzian dipole, and the total radiated field is obtained by superposition, following the approach of Johnston et al.~\cite{SimulationTHz}.
+
+\subsection{Retarded Potentials and Jefimenko's Equations}
+The electric field at an observation point $\mathbf{r}$ due to a time-varying source distribution is rigorously described by Jefimenko's equations, which are the retarded-time solutions to Maxwell's equations~\cite{griffiths_electrodynamics}. The key physical insight is causality: the field observed at time $t$ depends on the state of the source at the earlier retarded time
+\begin{equation}
+    t_{\mathrm{ret}} = t - \frac{R}{c},
+\end{equation}
+where $R = |\mathbf{r} - \mathbf{r}'|$ is the distance from the source point $\mathbf{r}'$ to the observation point $\mathbf{r}$, and $c$ is the speed of light.
+
+The full Jefimenko expression for the electric field contains three terms: a Coulomb (electrostatic) term proportional to $1/R^3$, an induction term proportional to $1/R^2$, and a radiation term proportional to $1/R$. In the far-field regime, where the observation distance is much larger than the spatial extent of the source ($R \gg d$), the $1/R^3$ and $1/R^2$ terms become negligible. The dominant radiative contribution is then
+\begin{equation}
+    \mathbf{E}(\mathbf{r}, t) \approx \frac{\mu_0}{4\pi} \iint_{S} \frac{\hat{\mathbf{R}} \times \left[\hat{\mathbf{R}} \times \dot{\mathbf{J}}(\mathbf{r}', t_{\mathrm{ret}})\right]}{R} \, dS',
+    \label{eq:farfield}
+\end{equation}
+where $\hat{\mathbf{R}} = (\mathbf{r} - \mathbf{r}')/R$ is the unit vector from source to observer, $\dot{\mathbf{J}} = \partial \mathbf{J}/\partial t$ is the time derivative of the current density, and $\mu_0$ is the permeability of free space. The double cross product $\hat{\mathbf{R}} \times [\hat{\mathbf{R}} \times \dot{\mathbf{J}}]$ extracts only the transverse component of the current acceleration, ensuring that only radiation polarised perpendicular to the line of sight propagates to the far field. This formulation has been successfully applied to simulate terahertz generation at semiconductor surfaces by Johnston et al.~\cite{SimulationTHz}, who used a semiclassical Monte Carlo model to compute carrier dynamics and then evaluated the far-field radiation using the retarded potential framework. More recently, Kefayati and Nikoli\'{c}~\cite{Kefayati2024} demonstrated that Jefimenko's equations can be combined with time-dependent density functional theory to reveal the microscopic origins of terahertz radiation in spintronic emitters, further validating the generality of this approach for modelling ultrafast electromagnetic emission.
+
+\subsection{Physical Interpretation}
+Equation~(\ref{eq:farfield}) encodes several important physical features:
+\begin{itemize}
+    \item \textbf{Proportionality to $\dot{\mathbf{J}}$}: The radiated field is driven by the \textit{rate of change} of the current, not the current itself. A steady current does not radiate; only accelerating or decelerating charges produce electromagnetic radiation. This is consistent with the Larmor radiation formula in classical electrodynamics.
+    \item \textbf{Retardation}: Each source element contributes to the observed field at a time delayed by $R/c$. For a spatially extended source, different elements contribute at different retarded times, producing temporal broadening and shaping of the observed pulse.
+    \item \textbf{Geometric projection}: The double cross product ensures that the observed polarisation depends on the viewing angle. For a radially symmetric current distribution arising from the Photo-Dember diffusion mechanism, the transverse field components on-axis cancel by symmetry, while off-axis observation yields a net radially polarised signal.
+    \item \textbf{$1/R$ decay}: The radiation field amplitude decreases as $1/R$, meaning the radiated power (proportional to $|\mathbf{E}|^2$) follows an inverse-square law, as expected for freely propagating waves.
+\end{itemize}
+
+In the context of this project, the current density $\mathbf{J}$ is obtained from the carrier transport simulation, which solves the diffusion-recombination equation for photo-generated electrons and holes in the semiconductor. The photocurrent arises from the spatial gradient of the carrier density via $\mathbf{J} = -qD\nabla n$, where $q$ is the elementary charge and $D$ is the diffusion coefficient. The Photo-Dember effect produces a net transient current because electrons diffuse faster than holes due to their higher mobility~\cite{Reklaitis2010}, creating a charge separation that radiates terahertz electromagnetic waves. Recent work by Hale et al.~\cite{Hale2022} has demonstrated that even ultrathin (160~nm) GaAs metasurfaces can generate THz pulses with efficiency comparable to bulk crystals, highlighting how charge density gradients at nanostructured surfaces serve as effective radiation sources through similar photocurrent mechanisms.
+
+\section{Methods: Numerical Implementation}
+
+The numerical computation of the radiated electric field was implemented in MATLAB as a vectorised function (\texttt{compute\_THz\_E\_from\_Jx.m}) that accepts the full three-component current density history $\mathbf{J}(\mathbf{r}', t) = [J_x, J_y, J_z]$ and returns the time-domain electric field waveform at a specified observation point.
+
+\subsection{Carrier Transport and Source Current}
+The source current is generated by the function \texttt{simulateTHzFromDiffusion.m}, which solves the two-dimensional diffusion-recombination equation on an $N_x \times N_y$ spatial grid:
+\begin{equation}
+    \frac{\partial n}{\partial t} = D \nabla^2 n + G(\mathbf{r}, t) - \frac{n}{\tau_r},
+    \label{eq:diffusion}
+\end{equation}
+where $n$ is the carrier density, $D$ is the ambipolar diffusion coefficient, $\tau_r$ is the carrier recombination lifetime, and $G(\mathbf{r}, t)$ is the optical generation rate. The Laplacian is computed using a five-point finite difference stencil $[0,1,0;\ 1,-4,1;\ 0,1,0]/h^2$, and the time stepping employs a forward Euler scheme with a CFL-limited time step $\Delta t \leq 0.95 \, h^2 / (4D)$ to guarantee numerical stability.
+
+The optical generation rate is modelled as
+\begin{equation}
+    G(\mathbf{r}, t) = G_0 \exp\!\left(-2\left[\frac{x^2}{w_x^2} + \frac{y^2}{w_y^2}\right]\right) \exp\!\left(-\frac{2(t - t_0)^2}{\tau_p^2}\right),
+\end{equation}
+where $G_0 = T_{\mathrm{tr}} \alpha I_0 / \hbar\omega$ is the peak generation rate, $T_{\mathrm{tr}} = 1 - R_{\mathrm{refl}}$ is the Fresnel transmission coefficient, $\alpha$ is the absorption coefficient, $I_0$ is the peak optical intensity, $w_x$ and $w_y$ are the beam waist radii (with $w_x = w_0/\cos\theta$ to account for oblique incidence at angle $\theta$), and $\tau_p$ is the pulse duration. For InAs at 800~nm, the refractive index $n_{\mathrm{InAs}} = 3.7351$ gives a reflectance $R_{\mathrm{refl}} \approx 0.33$.
+
+The diffusion current density at each time step is then obtained from the spatial gradient of the carrier density:
+\begin{equation}
+    J_x = -qD\frac{\partial n}{\partial x}, \quad J_y = -qD\frac{\partial n}{\partial y},
+\end{equation}
+where the gradients are evaluated using MATLAB's \texttt{gradient} function (central differences). The full current density history $J_x(x_i, y_j, t_k)$, $J_y(x_i, y_j, t_k)$, and $J_z(x_i, y_j, t_k)$ is stored for all grid points and time steps, forming the input to the far-field radiation calculation.
+
+\subsection{Far-Field Electric Field Computation}
+The surface integral in Equation~(\ref{eq:farfield}) is approximated as a discrete sum over the $N_x \times N_y$ source grid:
+\begin{equation}
+    \mathbf{E}(\mathbf{r}, t_k) \approx \frac{\mu_0}{4\pi} \sum_{i=1}^{N_x} \sum_{j=1}^{N_y} \frac{\hat{\mathbf{R}}_{ij} \times \left[\hat{\mathbf{R}}_{ij} \times \dot{\mathbf{J}}(\mathbf{r}'_{ij}, t_{\mathrm{ret},ij})\right]}{R_{ij}} \, \Delta x \, \Delta y.
+    \label{eq:discrete}
+\end{equation}
+
+The implementation proceeds through three stages:
+
+\textbf{Stage 1: Temporal derivative.} The time derivative $\dot{\mathbf{J}}$ is computed for all three components using a second-order central finite difference:
+\begin{equation}
+    \dot{J}_x(x_i, y_j, t_k) = \frac{J_x(x_i, y_j, t_{k+1}) - J_x(x_i, y_j, t_{k-1})}{2\Delta t},
+\end{equation}
+applied identically to $J_y$ and $J_z$. Boundary time steps ($k=1$ and $k=N_t$) are left as zero.
+
+\textbf{Stage 2: Geometry and retarded time.} For each source cell $(i,j)$, the displacement vector components are computed as $R_x = X_0 - x_i$, $R_y = Y_0 - y_j$, $R_z = z_0$, giving the distance $R_{ij} = \sqrt{R_x^2 + R_y^2 + R_z^2}$ and the unit vector $\hat{\mathbf{R}}_{ij}$. A singularity guard replaces any $R_{ij} = 0$ with machine epsilon. The retarded time is then $t_{\mathrm{ret},ij} = t_k - R_{ij}/c$, which is converted to a fractional array index $\tau = (t_{\mathrm{ret}} - t_1)/\Delta t + 1$.
+
+\textbf{Stage 3: Interpolation and accumulation.} Since $\tau$ generally falls between two discrete time indices, linear interpolation is applied:
+\begin{equation}
+    \dot{\mathbf{J}}_{\mathrm{ret}} = (1 - \alpha)\,\dot{\mathbf{J}}(\mathbf{r}'_{ij}, t_{\lfloor\tau\rfloor}) + \alpha\,\dot{\mathbf{J}}(\mathbf{r}'_{ij}, t_{\lfloor\tau\rfloor+1}),
+\end{equation}
+where $\alpha = \tau - \lfloor\tau\rfloor$. A validity mask is applied: source cells whose retarded time falls outside the simulation window contribute zero. The double cross product is evaluated using the BAC-CAB identity:
+\begin{equation}
+    \hat{\mathbf{R}} \times [\hat{\mathbf{R}} \times \dot{\mathbf{J}}] = (\hat{\mathbf{R}} \cdot \dot{\mathbf{J}})\,\hat{\mathbf{R}} - \dot{\mathbf{J}},
+\end{equation}
+which avoids explicitly computing two sequential cross products. Each transverse component is then divided by $R_{ij}$, multiplied by the area element $\Delta x\,\Delta y$, and summed over all source cells using fully vectorised MATLAB array operations with \texttt{sub2ind}-based linear indexing to avoid nested loops over the spatial grid.
+
+\subsection{Computational Performance}
+The overall computational cost scales as $\mathcal{O}(N_x \cdot N_y \cdot N_t)$ per observation point. For the typical parameters used in this project ($N_x = N_y = 100$, $N_t \approx 800$ time steps), single-point waveform calculations complete within seconds. The main performance-critical step is the inner summation loop over observation times, which remains a scalar loop over $N_t$ due to the dependence of $t_{\mathrm{ret}}$ on the current observation time $t_k$, while all spatial operations within each time step are fully vectorised. To generate transverse field maps at a fixed propagation distance, the computation is repeated over a grid of observation points $(X_0, Y_0)$, which can be parallelised across multiple workers using MATLAB's parallel computing toolbox if needed.
+
+\section{Validation: Reproduction of Published Far-Field Emission Pattern}
+
+To verify the correctness of the numerical framework, the simulation was benchmarked against the experimental far-field angular emission pattern reported by Mueckstein et al.~\cite{Mueckstein2015}. In that study, a Fe:InGaAs surface was excited at normal incidence by a 250~$\mu$m-diameter laser beam (pulse duration 100~fs, wavelength 800~nm), and the peak-to-peak amplitude $E_{\mathrm{pp}}$ of the emitted THz pulse was measured as a function of emission angle $\theta_1$ using a photoconductive detector with a sub-wavelength aperture positioned 5~mm from the source (far-field regime). The resulting angular distribution, shown in Fig.~8(b) of~\cite{Mueckstein2015}, exhibits a characteristic lobe structure with maximum emission at $\theta_1 \approx 20$--$30^{\circ}$, negligible emission along the surface normal ($\theta_1 = 0^{\circ}$), and vanishing amplitude at grazing incidence ($\theta_1 = 90^{\circ}$). This pattern is a direct consequence of the radially symmetric in-plane photo-currents driven by charge density gradients at the excitation boundary: on-axis, the transverse field components from opposite sides of the excitation spot cancel by symmetry, producing a null, while off-axis observation breaks this symmetry and yields a net radiated field.
+
+To reproduce this result, the simulation was configured with material parameters matching the Fe:InGaAs sample and the excitation geometry described in~\cite{Mueckstein2015}. The carrier transport was solved using the diffusion-recombination model (Equation~\ref{eq:diffusion}), and the far-field electric field was computed at observation angles $\theta_1 = 15.4^{\circ}$, $20^{\circ}$, $30^{\circ}$, $32^{\circ}$, $40^{\circ}$, $47^{\circ}$, $60^{\circ}$, $75^{\circ}$, and $90^{\circ}$ using the retarded potential framework (Equation~\ref{eq:discrete}). At each angle, the peak-to-peak amplitude of the simulated THz waveform was extracted and normalised to the maximum value.
+
+% TODO: Insert figure here showing the comparison polar plot
+ \begin{figure}[h]
+ 	\begin{center}
+ 	\includegraphics[width=9cm]{interim_report_latex_template (1)/figure/yaoqqi/angle.png}
+ 	\caption{
+ 		Normalised angular emission pattern $E_{\mathrm{pp}}(\theta_1)$ from the simulation (blue circles), compared with the experimental data from Fig.~8(b) of Mueckstein et al.~\cite{Mueckstein2015} (dashed line). The polar plot shows the peak-to-peak THz field amplitude as a function of emission angle above the semiconductor surface.
+ 	}
+ 	\label{fig:verification}
+ 	\end{center}
+ \end{figure}
+
+The simulated emission pattern shows good agreement with the published experimental data. The key features are faithfully reproduced: the amplitude peaks near $\theta_1 \approx 20^{\circ}$, decreases monotonically at larger angles, and falls to zero at $\theta_1 = 90^{\circ}$. The null at $\theta_1 = 0^{\circ}$ is an intrinsic consequence of the radial symmetry of the in-plane current distribution and the transverse nature of electromagnetic radiation. This agreement validates both the carrier transport model and the far-field radiation computation, confirming that the numerical implementation of the retarded potential framework correctly captures the angular radiation characteristics of photo-excited semiconductor surfaces. Notably, this verification also supports the conclusion of Mueckstein et al. that the in-plane photo-currents—rather than the normal-direction surface field current—dominate the THz emission process for narrow-bandgap semiconductors such as InGaAs and InAs~\cite{Mueckstein2015}.
+
+\newpage
+\bibliography{example-references}
+\bibliographystyle{IEEEtran}
+
+\end{document}

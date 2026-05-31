@@ -1,0 +1,725 @@
+\documentclass[12pt]{final_project_report}
+\usepackage{amsmath,amsthm,graphicx,subcaption}
+\usepackage{booktabs}
+\usepackage{float}
+
+\title{Modelling terahertz pulse generation due to ultrafast photocurrents in semiconductors }
+\author{Yaoqi Dong, Yuhao Chang, Shenglong Li}
+\date{2 May 2026}
+\supervisor{Professor Oleg Mitrofanov }
+\aiuse{{\bf If you have not used generative AI make sure that {\tt\bf\textbackslash aiuse} is empty. Only edit and include text inside {\tt\bf\textbackslash aiuse} if you have used generative AI.}
+
+I acknowledge the use of name and version of generative AI system  Chat-GPT-  (Publisher OpenAI, URL of the AI system  \\https://chat.openai.com) to brief description of context in which AI tool was used to summarise my initial notes, help with LaTeX format and proofread my final draft.}
+\wordcount{4401}
+
+\begin{document}
+
+\coverpage
+\declaration
+\maketitle
+\begin{exec_summary}
+This document provides a brief overview of how to use the 4\textsuperscript{th} year project final report \LaTeX\ template. It assumes that you have a basic understanding of \LaTeX.
+
+Use the excutive summary to summarise your main aim of the project and your most important finding(s). Use one paragraph to briefly describe each finding or outcome. Make sure you include quantitative information if you can, e.g.\ the ML algorithm is 85\,\% accurate or the implemented amplifier has a gain of 25\,dB. Spark the reader’s interest!
+
+The table of contents will appear on the next page.
+\end{exec_summary}
+\tableofcontents
+
+\section{Introduction and Literature Review}
+
+\subsection{Introduction}
+The generation of terahertz radiation via the excitation of semiconductor surfaces with femtosecond laser pulses is a well established technique in modern photonics~\cite{Pettine2023}. The terahertz frequency range, spanning roughly 0.1--30\,THz, has attracted rapidly growing interest across fields as diverse as medical imaging, 6G wireless communications, security screening, and astronomical observation~\cite{Leitenstorfer2023}, making efficient and well understood THz sources increasingly important. This process relies on the acceleration of photo generated carriers, where the resulting transient current acts as a Hertzian dipole source radiating electromagnetic waves into free space. While the physical mechanisms governing these currents, such as the photo-dember effect and surface depletion fields, are well established in theoretical literature, the complex electrodynamics governing the subsequent propagation of the electric field often remain abstract and difficult to visualise.
+\newline
+The primary objective of this project is to bridge this gap by developing a dedicated simulation interface using MATLAB App Designer. Unlike standard numerical scripts, this graphical interface provides an interactive environment to model and visualise the generation of THz fields based on the method of retarded potentials. The specific motivation is to create a versatile tool that allows users to modify intrinsic semiconductor properties, such as carrier lifetime, diffusion coefficients, and absorption depth, to dynamically simulate the radiation characteristics of different materials. By transforming static theoretical equations into observable temporal waveforms and spatial vector maps, this interface serves as both a pedagogical tool for understanding surface emission physics and a predictive platform for optimising semiconductor materials in terahertz emitter design. Notably, recent experimental studies have demonstrated that THz emission spectroscopy can be used as a rapid, noncontact characterisation method for semiconductor surfaces~\cite{YangTonouchi2022}, underscoring the practical relevance of accurate THz emission models.
+
+\subsection{Literature Review}
+
+Terahertz radiation occupies the spectral region between microwave electronics and far-infrared photonics, and its non-ionising character together with sensitivity to molecular vibrational modes has driven sustained interest in compact emitters for spectroscopy, imaging, security screening, and short-range wireless communication~\cite{Peng2020,Pettine2023}. Among the various sources available, ultrafast photoconductive emission from semiconductor surfaces remains attractive because it requires neither external bias, nor patterned antenna structures, nor frequency conversion crystals~\cite{Apostolopoulos2014,Pettine2023}. The mechanism was first identified by Auston, Cheung, and Smith~\cite{auston_picosecond_1984}, whose picosecond Hertzian dipole framework established that the radiated far field tracks the time derivative of the photocurrent rather than the current itself. That insight provides the conceptual foundation on which this project is built, since the simulation pipeline developed here computes the time derivative of a numerically obtained current density before integrating over the source plane through the retarded-potential formalism.
+
+Two distinct microscopic origins for the transient photocurrent have been established in the four decades since Auston's original observation. In wide-band-gap III\,V materials such as GaAs and InP, surface Fermi level pinning produces a depletion region within which photo generated electrons and holes drift in opposite directions along the surface normal, giving rise to a surge current that radiates linearly polarised pulses~\cite{auston_picosecond_1984,SimulationTHz}. In narrow band gap materials such as InAs, InSb, and Fe:InGaAs, the surface band bending is too weak to drive efficient drift, and the dominant mechanism becomes the photo-dember effect, in which the mobility asymmetry between electrons and holes generates a lateral diffusion current proportional to the spatial gradient of the carrier density~\cite{Reklaitis2010,Klatt2010}. Mueckstein et al.~\cite{Mueckstein2015} later demonstrated through near-field scanning that the radial polarisation pattern emitted by Fe:InGaAs originates almost entirely from the in plane photo-dember component rather than from any residual surface field, and the angular emission data reported in their work provides the experimental benchmark against which the present simulator is validated in Section~4.1. More recent investigations have shown that ballistic photocurrents in heterostructures~\cite{Malevich2021}, structured metasurfaces~\cite{Hale2022}, and Mie resonant InAs metalenses~\cite{Jung2024} can substantially exceed the emission efficiency of conventional bulk surfaces, broadening the design space within which any predictive simulation tool must remain useful.
+
+Existing numerical treatments of these two mechanisms span a wide range of sophistication, and their respective limitations directly motivate the modelling choices adopted in this work. Johnston et al.~\cite{SimulationTHz} coupled a semiclassical Monte Carlo solver to a Hertzian dipole far field calculation and reproduced experimental waveforms for several III\,V materials, although the Monte Carlo step is computationally demanding and offers limited transparency for users who wish to vary material parameters interactively. Drift diffusion approaches, including those reviewed by Apostolopoulos and Barnes~\cite{Apostolopoulos2014}, sacrifice the early time ballistic regime in exchange for tractable two dimensional simulations, yet remain accurate for the picosecond scale dynamics that dominate the radiated waveform. McBryde et al.~\cite{McBryde2018} extended the drift-diffusion approach by coupling it to a finite difference time domain Maxwell solver, and demonstrated that vertical current components in lateral photo-dember emitters carry more weight than was previously assumed. A common feature of these prior frameworks is that the radiation step is expressed either as a simplified dipole approximation or as a fully coupled FDTD simulation. The intermediate regime, in which the carrier transport is solved on a coarse grid and the far field is obtained directly from Jefimenko's retarded potential expression, has received comparatively little attention, despite its appropriateness for surface emitters whose source extent is much smaller than the THz wavelength. This intermediate regime is the one adopted in the present project, and a recent application of the same retarded-potential framework to spintronic emitters by Kefayati and Nikoli\'{c}~\cite{Kefayati2024} confirms that Jefimenko's equations remain a valid description of ultrafast electromagnetic emission across material classes well beyond conventional semiconductors.
+
+Despite the maturity of the underlying physics, openly available simulation tools that allow non specialist users to explore how material parameters and excitation conditions shape the radiated field remain scarce. Most published implementations are bespoke research codes whose interfaces, parameter conventions, and output formats are tailored to the originating laboratory, and their dissemination has tended to consist of journal figures rather than redistributable software. The interactive simulation framework developed in this project is intended to address that gap. By integrating a vectorised diffusion-recombination solver, a vectorised retarded potential integrator, and a MATLAB App Designer interface within a single workflow, the tool exposes the temporal waveform, spatial polarisation pattern, and carrier dynamics produced by a single set of user defined parameters in a coordinated display. The custom mechanism mode further allows arbitrary user defined current expressions to be supplied at runtime, which extends the framework beyond the two canonical mechanisms and enables exploration of hypothetical or composite source distributions without modification of the underlying engine. The contribution of this work therefore lies less in the formulation of new physics and more in the consolidation of established theoretical results into an interactive, validated, and extensible platform suitable for both pedagogical use and predictive design of surface emission THz sources.
+
+\section{Technical Background}
+\subsection{Photo-Dember Effect}
+\subsubsection{Carrier Generation and Diffusion}
+
+The photo-dember effect starts when an ultrafast laser pulse excites the semiconductor surface. In this project, the semiconductor material is InAs, and the laser pulse is described as a short Gaussian excitation in both space and time. When the semiconductor absorbs the photon energy, it generates electron hole pairs near the illuminated surface. This process occurs on a femtosecond to picosecond timescale, so the initial carrier distribution is highly localised and far from equilibrium~\cite{Tonouchi2020,Heroux2017}. The optical generation term can be described as
+\begin{equation}
+    G(x,y,t) = G_0
+    \exp\left[-\frac{x^2+y^2}{w_0^2}\right]
+    \exp\left[-\frac{(t-t_0)^2}{2\sigma_t^2}\right],
+    \label{eq:gaussian_generation}
+\end{equation}
+where $G_0$ is the peak carrier generation rate, $w_0$ is the beam waist, $t_0$ is the pulse centre time, and $\sigma_t$ is the temporal pulse width. Equation~\ref{eq:gaussian_generation} shows that the carrier generation is strongest at the centre of the laser spot and around the pulse peak time. A stronger and more localised optical excitation produces a larger carrier density gradient, which later becomes the driving force for carrier diffusion. Therefore, the optical excitation profile directly affects the strength and shape of the transient current that can radiate terahertz waves~\cite{Tonouchi2020,NavarroCia2016}.
+
+After the electron hole pairs are generated, the carriers begin to move away from the excitation region. In the photo-dember effect, electrons and holes do not diffuse at the same speed because electrons have higher mobility than holes in most semiconductors. The Einstein relation links the carrier mobility to the diffusion coefficient:
+\begin{equation}
+    D = \mu \frac{k_B T}{q},
+    \label{eq:einstein_relation}
+\end{equation}
+where $D$ is the diffusion coefficient, $\mu$ is the carrier mobility, $k_B$ is the Boltzmann constant, $T$ is the absolute temperature, and $q$ is the elementary charge. A higher mobility gives a higher diffusion coefficient at the same temperature, so electrons usually spread out more quickly than holes after photo excitation~\cite{Heroux2017,Lu2022}. This unequal diffusion creates a temporary spatial separation between negative and positive charges. Electrons move farther away from the excitation centre, while holes remain more localised near the original generation region. This charge separation is the physical origin of the photo-dember field and the associated photocurrent. InAs is suitable for this mechanism because its electron mobility is much higher than its hole mobility, which enhances diffusion driven carrier separation after femtosecond excitation~\cite{Heroux2017,Lu2022}.
+
+\subsubsection{Transient Photocurrent and THz Radiation}
+
+The unequal diffusion of electrons and holes produces a transient photocurrent. In a diffusion based description, the current is driven by the spatial gradient of the carrier density. The diffusion current density can be written as
+\begin{equation}
+    \mathbf{J}_{\mathrm{diff}} = qD\nabla n,
+    \label{eq:diffusion_current}
+\end{equation}
+where $\mathbf{J}_{\mathrm{diff}}$ is the diffusion current density, $n$ is the carrier density, and $\nabla n$ is the carrier density gradient. The current is strongest where the carrier density changes most rapidly with position. For a Gaussian laser spot, carriers move from the high density excitation region towards the surrounding low density region, so the diffusion current points radially outward from the centre of the beam~\cite{Tonouchi2020,NavarroCia2016}. Notably, the current is not strongest at the exact centre of the laser spot, where the carrier density is high but the density gradient is close to zero. Instead, the strongest current appears around the flanks of the Gaussian distribution, where the carrier density changes most rapidly with position.
+
+For a more complete electron hole description, the photo-dember current can also be expressed as
+\begin{equation}
+    \mathbf{J}_{\mathrm{PD}} =
+    q\left(D_e\nabla n - D_h\nabla p\right),
+    \label{eq:photo_dember_current}
+\end{equation}
+where $D_e$ and $D_h$ are the electron and hole diffusion coefficients, and $n$ and $p$ are the electron and hole densities. The net photo-dember current depends on the difference between electron and hole diffusion, so when electrons diffuse faster than holes, the electron contribution dominates the transient current. The carrier density itself does not directly radiate a strong terahertz field; instead, the rapidly changing current produced by carrier redistribution acts as the electromagnetic source~\cite{Tonouchi2020,Pettine2023}. The electrodynamic framework linking the time derivative of the photocurrent to the radiated far field is presented in Section~2.3.
+
+\subsection{Built-in Field Effect}
+\subsubsection{Depletion Field and Carrier Drift}
+
+The built-in field effect provides a second mechanism through which ultrafast photocurrents can radiate terahertz waves from semiconductor surfaces. At the free surface of a semiconductor, the abrupt termination of the periodic crystal lattice introduces dangling bonds and surface states within the band gap. These states trap charge carriers from the bulk and pin the Fermi level near the middle of the band gap, regardless of the bulk doping concentration~\cite{SimulationTHz,Pettine2023}. The redistribution of charge between the surface states and the bulk produces a depletion region near the surface, in which a static electric field develops along the depth direction. The width of the depletion region $W_{\mathrm{dep}}$ and the magnitude of the built-in field $E_{\mathrm{bi}}$ depend on the doping density, the position of the pinned Fermi level, and the band gap energy of the material. For typical III\,V semiconductors such as GaAs and InP, the depletion width lies in the range of a few tens to a few hundreds of nanometres, and the peak field magnitude can reach $10^{5}$\,V/m to $10^{6}$\,V/m near the surface~\cite{SimulationTHz}. In the simplest one dimensional approximation, the depletion field decays smoothly from its peak value at the surface to zero at the depletion edge, where the semiconductor recovers its bulk neutral condition.
+
+When a femtosecond optical pulse is absorbed near the surface, electron\,hole pairs are generated within the depletion region. The static built-in field then exerts opposite forces on the two carrier types. In an n type or intrinsic semiconductor with downward surface band bending, electrons are accelerated towards the bulk while holes are accelerated towards the surface. The drift velocities can be written as
+\begin{equation}
+    \mathbf{v}_n = -\mu_n \mathbf{E}_{\mathrm{bi}}, \qquad
+    \mathbf{v}_p = \mu_p \mathbf{E}_{\mathrm{bi}},
+    \label{eq:drift_velocities}
+\end{equation}
+where $\mu_n$ and $\mu_p$ are the electron and hole mobilities, respectively. The opposite drift directions produce a vertical separation of charge along the depth coordinate $z$, with electrons accumulating at greater depths and holes remaining closer to the surface~\cite{auston_picosecond_1984,SimulationTHz}. This carrier separation occurs on a sub picosecond timescale, since the photo generated carriers respond to the local field almost as soon as they are created. Whereas the photo-dember effect produces a radial in plane current driven by carrier density gradients, the built-in field effect produces a directed vertical current along the surface normal~\cite{Pettine2023,YangTonouchi2022}.
+
+\subsubsection{Drift Current and THz Radiation}
+
+The drift of photo generated electrons and holes in the depletion field produces a transient photocurrent along the depth direction. The local current density can be expressed as
+\begin{equation}
+    \mathbf{J}_{\mathrm{drift}}(z,t) = q\left[\mu_n n(z,t) + \mu_p p(z,t)\right] \mathbf{E}_{\mathrm{bi}}(z),
+    \label{eq:drift_current_density}
+\end{equation}
+where $n(z,t)$ and $p(z,t)$ are the electron and hole densities. Because both carriers contribute additively to the conduction current, the magnitude of the drift current scales with the total photo generated carrier density and with the strength of the local depletion field. The drift current is therefore largest near the surface, where both the carrier density and the built-in field reach their maximum values~\cite{SimulationTHz}. As carriers move away from the surface, the field weakens and the local current density decreases. The temporal evolution of the current follows the rapid generation of carriers during the laser pulse, followed by a slower decay governed by carrier recombination, diffusion away from the high field region, and screening of the depletion field by the separated charges themselves~\cite{Malevich2021}. The total drift current observed in the far field is obtained by integrating the local contribution along the depth coordinate over the depletion region, since the radiating source spans the full extent of the field driven transport region rather than a single plane~\cite{SimulationTHz}.
+
+As with the photo-dember mechanism, the rapidly varying drift current radiates terahertz energy through the retarded potential framework described in Section~2.3. Because the source current points along the surface normal, the radiated far field is linearly polarised in the plane of incidence. This polarisation behaviour distinguishes the built-in field mechanism from the photo-dember mechanism, which produces radially polarised emission as a consequence of its in plane diffusive current~\cite{YangTonouchi2022,SimulationTHz}. The relative importance of the two mechanisms depends on the material system. In wide band gap III\,V semiconductors with strong surface Fermi level pinning, such as GaAs and InP, the built-in field effect typically dominates the THz emission~\cite{auston_picosecond_1984,SimulationTHz}. In narrow band gap materials such as InAs and Fe:InGaAs, the surface band bending is weaker and the photo-dember mechanism becomes the dominant source of radiation~\cite{Reklaitis2010}. Both mechanisms can coexist in a given material, and their combined contribution determines the amplitude, polarisation, and waveform of the emitted terahertz pulse.
+
+\subsection{Electric Field Theory}
+\subsubsection{Retarded Potentials and Jefimenko's Equations}
+The underlying link between ultrafast photocurrents and terahertz emission lies in classical electrodynamics. When a femtosecond laser pulse excites a semiconductor surface, it generates a transient current density $\mathbf{J}(\mathbf{r}', t)$ through mechanisms such as the photo-dember effect and surface depletion field drift. Since this current varies on a sub picosecond timescale, it radiates electromagnetic energy in the terahertz frequency range~\cite{Yang2023}. This principle was first experimentally verified by Auston et al.~\cite{auston_picosecond_1984}, who demonstrated that the far field radiation from a transient current source is proportional to the first time derivative of the dipole moment. Recent studies have further shown that similar transient photocurrent mechanisms drive THz emission in semiconductor heterostructures, where ballistic photocurrents across band offsets produce measurable radiation pulses~\cite{Malevich2021}. The theoretical framework employed in this project treats each infinitesimal current element on the semiconductor surface as a Hertzian dipole, and the total radiated field is obtained by superposition, following the approach of Johnston et al.~\cite{SimulationTHz}.
+
+The electric field at an observation point $\mathbf{r}$ due to a time varying source distribution is rigorously described by Jefimenko's equations, which are the retarded time solutions to Maxwell's equations~\cite{griffiths_electrodynamics}. The key physical insight is causality: the field observed at time $t$ depends on the state of the source at the earlier retarded time
+\begin{equation}
+    t_{\mathrm{ret}} = t - \frac{R}{c},
+\end{equation}
+where $R = |\mathbf{r} - \mathbf{r}'|$ is the distance from the source point $\mathbf{r}'$ to the observation point $\mathbf{r}$, and $c$ is the speed of light. The full Jefimenko expression for the electric field contains three terms: a Coulomb term proportional to $1/R^3$, an induction term proportional to $1/R^2$, and a radiation term proportional to $1/R$. In the far field regime, where the observation distance is much larger than the spatial extent of the source ($R \gg d$), the $1/R^3$ and $1/R^2$ terms become negligible. The dominant radiative contribution is then
+\begin{equation}
+    \mathbf{E}(\mathbf{r}, t) \approx \frac{\mu_0}{4\pi} \iint_{S} \frac{\hat{\mathbf{R}} \times \left[\hat{\mathbf{R}} \times \dot{\mathbf{J}}(\mathbf{r}', t_{\mathrm{ret}})\right]}{R} \, dS',
+    \label{eq:farfield}
+\end{equation}
+where $\hat{\mathbf{R}} = (\mathbf{r} - \mathbf{r}')/R$ is the unit vector from source to observer, $\dot{\mathbf{J}} = \partial \mathbf{J}/\partial t$ is the time derivative of the current density, and $\mu_0$ is the permeability of free space. The double cross product $\hat{\mathbf{R}} \times [\hat{\mathbf{R}} \times \dot{\mathbf{J}}]$ extracts only the transverse component of the current acceleration, ensuring that only radiation polarised perpendicular to the line of sight propagates to the far field. This formulation has been successfully applied to simulate terahertz generation at semiconductor surfaces by Johnston et al.~\cite{SimulationTHz}, who used a semiclassical Monte Carlo model to compute carrier dynamics and then evaluated the far field radiation using the retarded potential framework. More recently, Kefayati and Nikoli\'{c}~\cite{Kefayati2024} demonstrated that Jefimenko's equations can be combined with time dependent density functional theory to reveal the microscopic origins of terahertz radiation in spintronic emitters, further validating the generality of this approach for modelling ultrafast electromagnetic emission.
+
+\subsubsection{Physical Interpretation}
+Equation~(\ref{eq:farfield}) encodes several important physical features. First, the radiated field is driven by the rate of change of the current $\dot{\mathbf{J}}$, not the current itself. A steady current does not radiate; only accelerating or decelerating charges produce electromagnetic radiation, consistent with the Larmor radiation formula in classical electrodynamics. Second, each source element contributes to the observed field at a time delayed by $R/c$. For a spatially extended source, different elements contribute at different retarded times, producing temporal broadening and shaping of the observed pulse. Third, the double cross product ensures that the observed polarisation depends on the viewing angle. For a radially symmetric current distribution arising from the photo-dember diffusion mechanism, the transverse field components on axis cancel by symmetry, while off axis observation yields a net radially polarised signal. Finally, the radiation field amplitude decreases as $1/R$, so the radiated power follows an inverse square law, as expected for freely propagating waves.
+
+In the context of this project, the current density $\mathbf{J}$ is obtained from the carrier transport simulation, which solves the diffusion recombination equation for photo generated electrons and holes in the semiconductor. The photocurrent arises from the spatial gradient of the carrier density via $\mathbf{J} = qD\nabla n$, where $q$ is the elementary charge and $D$ is the diffusion coefficient. The photo-dember effect produces a net transient current because electrons diffuse faster than holes due to their higher mobility~\cite{Reklaitis2010}, creating a charge separation that radiates terahertz electromagnetic waves. Recent work by Hale et al.~\cite{Hale2022} has demonstrated that even ultrathin GaAs metasurfaces can generate THz pulses with efficiency comparable to bulk crystals, and Jung et al.~\cite{Jung2024} have further shown that InAs metalens emitters based on Mie resonators can produce focused THz beams with amplitudes up to 20 times greater than plasmonic emitters, highlighting how charge density gradients at nanostructured surfaces serve as effective radiation sources through similar photocurrent mechanisms.
+
+\section{Methods}
+\subsection{Photo-Dember Numerical Model}
+
+The photo-dember model was implemented as a two dimensional diffusion recombination simulation in the semiconductor surface plane, describing how an ultrafast optical pulse generates a localised carrier population that diffuses outward and produces a transient diffusion current. At this stage, the model used a simplified single carrier approach based on the electron density distribution alone, rather than solving a fully coupled electron hole transport system. This simplification was sufficient because the main purpose was to obtain the diffusion driven current source for the later THz radiation calculation.
+
+The simulation domain covered a $1.5\,\mathrm{mm} \times 1.5\,\mathrm{mm}$ square in the $x$-$y$ plane, discretised into $601 \times 601$ uniformly spaced grid points. The optical excitation was modelled as a Gaussian pulse in both space and time, centred at $x = 0$ and $y = 0$ with a beam waist of $w_0 = 250\,\mu\mathrm{m}$. The spatial Gaussian profile followed the form:
+
+\begin{equation}
+    \exp\!\left[-\frac{2(x^2 + y^2)}{w_0^2}\right],
+\end{equation}
+
+where $w_0$ represents the beam waist. The temporal excitation was also Gaussian with its peak at $t = 0$ and a pulse width of $0.1\,\mathrm{ps}$. The simulation ran from $-5\,\mathrm{ps}$ to $40\,\mathrm{ps}$, covering both the initial ultrafast excitation and the later diffusion recombination stages. The generation rate was calculated from the incident optical intensity, photon energy, absorption coefficient, and transmission through the air InAs interface, where the reflection coefficient was estimated using the refractive indices of the two media. The carrier transport was then described using the two dimensional diffusion recombination equation:
+
+\begin{equation}
+    \frac{\partial n}{\partial t} = D\nabla^2 n + G(x,y,t) - \frac{n}{\tau_r}
+\end{equation}
+
+In this equation, $n$ is the electron density, $D$ is the diffusion coefficient, $G(x,y,t)$ is the optical generation term, and $\tau_r$ is the recombination lifetime. The diffusion coefficient was computed from the Einstein relation $D_e = \mu_e k_B T / q$, giving $D_e \approx 0.0207\,\mathrm{m^2/s}$ at $T = 300\,\mathrm{K}$ with electron mobility $\mu_e = 0.8\,\mathrm{m^2/(V\,s)}$, and the recombination lifetime was set to $\tau_r = 100\,\mathrm{ps}$.
+
+The two dimensional Laplacian was approximated using a five point finite difference stencil, and the time evolution was solved using an explicit forward Euler scheme. To maintain numerical stability, the code compared the nominal time step with the CFL limited value and used the smaller of the two. After each update, negative carrier density values were clipped to zero to avoid non physical results. Boundary effects were minimised by choosing a simulation domain much larger than the excited region, so edge effects had limited influence on the results near the centre of the domain.
+
+The diffusion current was calculated from the spatial gradient of the carrier density:
+
+\begin{align}
+    J_x &= qD\,\frac{\partial n}{\partial x} \\[6pt]
+    J_y &= qD\,\frac{\partial n}{\partial y}
+\end{align}
+
+In these equations, $q$ is the elementary charge. Central finite differences were used for interior grid points and one sided differences at the boundaries, producing the $x$ and $y$ components of the transient diffusion current across the semiconductor surface.
+
+Several outputs were stored for analysis: carrier density snapshots at selected times ($-0.1$, $0$, $0.1$, $0.5$, $1$, and $5\,\mathrm{ps}$), the central carrier density $n(0,0,t)$ to track the rapid rise and decay of excitation, and the standard deviations $\sigma_x$ and $\sigma_y$ to confirm the radial spreading of the carrier cloud. The current vectors were plotted on top of the carrier density maps and pointed radially outward from the excitation centre, consistent with the expected photo-dember diffusion mechanism. The strongest current appeared around the flanks of the Gaussian distribution rather than at the exact centre, where the carrier density gradient is largest. This model therefore successfully produced the transient diffusion current required for the later THz radiation calculation.
+
+\subsection{Built-in Field Numerical Model}
+A one dimensional drift diffusion recombination model was developed to study the built-in field effect near the InAs surface. Unlike the photo-dember model in Section~3.1, this simulation focused on how a surface depletion field separates photo generated electrons and holes along the depth ($z$) direction rather than lateral diffusion in the $x$-$y$ plane.
+
+The simulation domain extended from $z = 0$ (the semiconductor surface) to $z = 3~\mu\mathrm{m}$ into the bulk, divided into 201 uniformly spaced grid points. A depletion region of width $0.5~\mu\mathrm{m}$ was defined near the surface, with a prescribed built-in electric field rather than a self consistent solution from Poisson's equation. This simplification reduced computational complexity while preserving the main physical behaviour of surface carrier separation. The field was strongest at the surface and decayed smoothly to zero at the depletion edge, with its profile defined as:
+
+\begin{equation}
+E(z) =
+\begin{cases}
+-\dfrac{E_{\max}\left[1+\cos\left(\pi z/W_{\mathrm{dep}}\right)\right]}{2}, & 0 \leq z \leq W_{\mathrm{dep}}, \\[6pt]
+0, & z > W_{\mathrm{dep}}.
+\end{cases}
+\label{eq:built_in_field_profile}
+\end{equation}
+
+The negative sign defines the field direction in the simulation coordinate system, and the maximum field magnitude was set to $8 \times 10^{5}~\mathrm{V/m}$. The optical generation term was defined as:
+
+\begin{equation}
+G(z,t) =
+G_{\mathrm{peak}}
+\exp(-\alpha z)
+\exp\left[-\frac{(t-t_0)^2}{2\sigma_t^2}\right].
+\label{eq:built_in_generation}
+\end{equation}
+
+In this expression, the exponential term describes optical absorption along the depth direction, and the Gaussian term represents the temporal laser pulse. The absorption coefficient was set to $\alpha = 1/(140\,\mathrm{nm}) \approx 7.14 \times 10^{6}~\mathrm{m^{-1}}$, the pulse width (FWHM) to $0.1~\mathrm{ps}$, and the pulse was centred at $t = 0$.
+
+Both electron and hole densities were included in the transport calculation, with the electron mobility set to $\mu_e = 0.8~\mathrm{m^2/(V\,s)}$ and the hole mobility to $\mu_h = 0.1\,\mu_e = 0.08~\mathrm{m^2/(V\,s)}$. The diffusion coefficients were calculated using the Einstein relation $D = \mu k_B T / q$ at $T = 300~\mathrm{K}$, and the recombination lifetime was set to $\tau_r = 100~\mathrm{ps}$. Carrier transport was solved using drift diffusion equations, where the electron drift velocity $v_n = -\mu_n E$ is opposite to the electric field and the hole drift velocity $v_p = \mu_p E$ is along the field. The numerical update used a finite volume style flux method with an upwind scheme for the drift term, which selected the upstream carrier density according to the sign of the drift velocity to improve numerical stability. Zero flux boundary conditions were applied at both ends of the domain, preventing carriers from leaving the computational region.
+
+At each time step, optical generation added equal numbers of electrons and holes, while pair recombination removed them according to:
+
+\begin{equation}
+R_{\mathrm{pair}}(z,t) =
+\frac{\min\left[n(z,t),p(z,t)\right]}{\tau_{\mathrm{rec}}}.
+\label{eq:pair_recombination}
+\end{equation}
+
+This definition ensured that recombination removed electrons and holes in pairs, and after each update negative carrier densities were clipped to zero to avoid non physical values. The simulation used a time step of $0.5~\mathrm{fs}$ and ran from $-5~\mathrm{ps}$ to $40~\mathrm{ps}$, with carrier density profiles saved at $0.2$, $0.5$, $1.0$, $2.0$, and $5.0~\mathrm{ps}$ to track the evolution of electron and hole distributions inside the depletion region.
+
+The transient photocurrent generated by the built-in field was also calculated. The total drift driven photocurrent was obtained by integrating the local current density along the depth direction:
+
+\begin{equation}
+J_{\mathrm{total}}(t)
+=
+A_{\mathrm{eff}}
+\int q\left[\mu_n n(z,t)+\mu_p p(z,t)\right]E(z)\,dz .
+\label{eq:built_in_total_current}
+\end{equation}
+
+Here, $A_{\mathrm{eff}}$ is the effective beam area, $n(z,t)$ and $p(z,t)$ are the electron and hole densities, $\mu_n$ and $\mu_p$ are the carrier mobilities, and $E(z)$ is the built-in electric field. This expression includes only the drift contribution, not the diffusion current. The rapid time variation of this photocurrent acts as the source for THz radiation, connecting the built-in field model to the far field calculation in Section~3.3. Together with the diffusion driven photo-dember current from Section~3.1, this drift current completes the set of source terms used in the THz emission simulation.
+
+\subsection{Electric Field Computation}
+The numerical computation of the radiated electric field was implemented in MATLAB as a vectorised function (\texttt{compute\_THz\_E\_from\_Jx.m}) that accepts the full three component current density history $\mathbf{J}(\mathbf{r}', t) = [J_x, J_y, J_z]$ from the carrier transport model and returns the time domain electric field waveform at a specified observation point. The source current is generated by the function \texttt{simulateTHzFromDiffusion.m}, which solves the two dimensional diffusion recombination equation on a spatial grid and stores the current density components as three dimensional MATLAB arrays of size $N_y \times N_x \times N_t$, where the first two dimensions correspond to the spatial grid and the third to the time steps. The computational model discretises the semiconductor surface into a grid of elementary Hertzian dipoles, and the total radiated field is obtained by coherently summing the retarded time contributions from all source elements using the far field approximation derived in Section~2.3.
+
+\subsubsection{Discretisation and Geometry}
+Figure~\ref{fig:geometry} illustrates the computational geometry. The semiconductor surface at $z = 0$ is represented by an $N_x \times N_y$ spatial grid spanning a domain of $L_x \times L_y = 1.5~\mathrm{mm} \times 1.5~\mathrm{mm}$, with the default resolution set to $N_x = N_y = 601$ grid points in the GUI implementation. The one-dimensional coordinate vectors $x$ and $y$ are generated using MATLAB's \texttt{linspace} function to produce uniformly spaced points from $-L/2$ to $+L/2$, and the two dimensional coordinate matrices are constructed using \texttt{meshgrid(x, y)}, which returns matrices $XX$ and $YY$ of size $N_y \times N_x$. This convention, where the row index corresponds to $y$ and the column index to $x$, follows MATLAB's standard matrix orientation and is maintained consistently throughout both the carrier transport and field computation modules.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.75\linewidth]{interim_report_latex_template (1)/figure/yaoqqi/figure_geometry_schematic.png}
+    \caption{
+        Schematic of the far-field radiation geometry. The semiconductor surface is discretised into an $N_x \times N_y$ grid. Each source cell radiates via $\dot{\mathbf{J}}$ (green arrow). The field at the observer $\mathbf{r}$ is obtained by summing retarded-time contributions along $R_{ij}$.
+    }
+    \label{fig:geometry}
+\end{figure}
+
+Each grid cell at position $\mathbf{r}'_{ij}$ carries a time varying current density $\mathbf{J}(\mathbf{r}'_{ij}, t_k)$ obtained from the diffusion recombination solver. In the transport model, the diffusion current at each time step is computed from the spatial gradient of the carrier density using MATLAB's built in \texttt{gradient} function, which applies second order central differences internally:
+
+\begin{equation}
+    J_x = qD\frac{\partial n}{\partial x}, \quad J_y = qD\frac{\partial n}{\partial y},
+\end{equation}
+
+where $q$ is the elementary charge, $D$ is the diffusion coefficient, and $n$ is the carrier density. The \texttt{gradient} function was chosen because it handles boundary cells with appropriate one sided differences, avoiding the need for manual ghost cell implementations at the grid edges.\newline
+The observation point $\mathbf{r} = (X_0, Y_0, z_0)$ is placed in the far field region, typically at $z_0 = 5$--$10$~mm above the surface. For each source cell, the displacement vector $\mathbf{R}_{ij} = \mathbf{r} - \mathbf{r}'_{ij}$ defines the distance $R_{ij} = |\mathbf{R}_{ij}|$ and the unit vector $\hat{\mathbf{R}}_{ij} = \mathbf{R}_{ij}/R_{ij}$. These quantities are computed as two dimensional arrays using element wise MATLAB operations such as \texttt{sqrt} and \texttt{./}, which avoids any explicit loops over the spatial grid. A singularity guard is applied using \texttt{R(R==0) = eps}, where \texttt{eps} $\approx 2.2 \times 10^{-16}$ is MATLAB's machine epsilon, to prevent division by zero errors.
+
+The surface integral in Equation~(\ref{eq:farfield}) is then approximated as a discrete sum over all source cells:
+
+\begin{equation}
+    \mathbf{E}(\mathbf{r}, t_k) \approx \frac{\mu_0}{4\pi} \sum_{i=1}^{N_x} \sum_{j=1}^{N_y} \frac{\hat{\mathbf{R}}_{ij} \times \left[\hat{\mathbf{R}}_{ij} \times \dot{\mathbf{J}}(\mathbf{r}'_{ij}, t_{\mathrm{ret},ij})\right]}{R_{ij}} \, \Delta x \, \Delta y.
+    \label{eq:discrete}
+\end{equation}
+
+\subsubsection{Three Stage Numerical Algorithm}
+The evaluation of Equation~(\ref{eq:discrete}) is carried out through a three stage pipeline, as summarised in Figure~\ref{fig:flowchart}. The input to the algorithm is the full spatiotemporal current density history $\mathbf{J}(x_i, y_j, t_k)$, stored as three MATLAB arrays \texttt{Jx}, \texttt{Jy}, and \texttt{Jz}, each of dimension $N_y \times N_x \times N_t$. The output is the three component electric field waveform $\mathbf{E}(t)$, returned as three row vectors \texttt{Ex}, \texttt{Ey}, and \texttt{Ez} of length $N_t$.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.85\linewidth]{interim_report_latex_template (1)/figure/yaoqqi/figure_algorithm_flowchart.png}
+    \caption{
+        Flowchart of the three-stage algorithm. Stage~1 differentiates $\mathbf{J}$ in time. Stage~2 maps retarded times and interpolates $\dot{\mathbf{J}}$. Stage~3 applies the vector triple product identity. All source contributions are summed to yield $\mathbf{E}(t)$.
+    }
+    \label{fig:flowchart}
+\end{figure}
+
+The radiated field is proportional to $\dot{\mathbf{J}}$, not $\mathbf{J}$ itself, so the first step computes the time derivative of each current density component at every spatial grid point. A second order central finite difference scheme is employed:
+\begin{equation}
+    \dot{J}_x(x_i, y_j, t_k) = \frac{J_x(x_i, y_j, t_{k+1}) - J_x(x_i, y_j, t_{k-1})}{2\Delta t},
+\end{equation}
+applied identically to $J_y$ and $J_z$. In MATLAB, this operation is performed on the entire three dimensional array simultaneously using slice indexing without any explicit loops:
+\begin{verbatim}
+    dJx(:,:,2:Nt-1) = (Jx(:,:,3:Nt) - Jx(:,:,1:Nt-2)) / (2*dt);
+\end{verbatim}
+The notation \texttt{Jx(:,:,3:Nt)} selects all spatial grid points at time indices 3 through $N_t$, and the subtraction and division are applied element wise across the full $N_y \times N_x \times (N_t - 2)$ sub array in a single operation. This vectorised approach is significantly faster than an equivalent triple nested loop, as MATLAB's internal array operations are executed in optimised compiled code. The second order scheme was chosen over a first order forward difference to minimise numerical dispersion errors in the derivative, which is important because $\dot{\mathbf{J}}$ directly determines the amplitude and waveform shape of the radiated pulse. At the boundary time steps $k = 1$ and $k = N_t$, the derivative arrays are initialised to zero using \texttt{dJx = zeros(size(Jx))}, as the current density is negligible at the start and end of the simulation window.\newline
+Figure~\ref{fig:dJdt} presents a snapshot of the resulting $|\dot{\mathbf{J}}|$ distribution across the source grid, computed using the default photo-dember parameters described in Section~3.1. The peak of $|\dot{\mathbf{J}}|$ occurs at $t \approx -0.03$~ps, which is a slightly negative time relative to the defined pulse centre at $t = 0$. This is physically expected because the simulation time axis is defined such that $t = 0$ corresponds to the peak of the Gaussian optical excitation pulse, and the time window extends from $T_{\mathrm{min}} = -5$~ps to $T_{\mathrm{max}} = 40$~ps to capture the full transient response. The current derivative peaks on the rising edge of the laser pulse because this is when the carrier generation rate, and hence the rate of change of the diffusion current, is increasing most rapidly. By the time the pulse reaches its maximum at $t = 0$, the generation rate has begun to plateau, causing $\dot{\mathbf{J}}$ to decrease. This temporal asymmetry is an inherent characteristic of the Gaussian excitation profile and is consistent with the bipolar waveform structure observed in the radiated THz pulse.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.75\linewidth]{interim_report_latex_template (1)/figure/yaoqqi/figure_dJdt_snapshot.png}
+    \caption{
+        Spatial distribution of $|\partial \mathbf{J}/\partial t|$ at $t \approx -0.03$~ps. The ring shaped pattern reflects the steepest carrier density gradients at the Gaussian beam flanks. White arrows confirm radially outward $\dot{\mathbf{J}}$ from photo-dember diffusion.
+    }
+    \label{fig:dJdt}
+\end{figure}
+
+Spatially, the heatmap reveals a distinctive ring shaped magnitude distribution centred on the laser excitation spot. The magnitude $|\dot{\mathbf{J}}|$ is largest at intermediate radii where the spatial gradient of the carrier density is steepest, corresponding to the flanks of the Gaussian beam profile. At the beam centre, the carrier density is nearly uniform and the gradient is zero, so $\dot{\mathbf{J}}$ vanishes despite the high absolute carrier concentration. Similarly, far from the excitation region, the carrier density itself is negligible, so the derivative is also zero. The overlaid white arrows confirm that $\dot{\mathbf{J}}$ is directed radially outward at all azimuthal angles, reflecting the isotropic nature of the photo-dember diffusion mechanism. This radially symmetric source distribution has a direct physical consequence for the emitted radiation: when the far field integral in Equation~(\ref{eq:discrete}) is evaluated along the surface normal at $\theta = 0^\circ$, the transverse projections from opposite sides of the ring cancel by symmetry, producing the characteristic on-axis null observed in both simulation and experiment~\cite{Mueckstein2015}.\newline
+For each source cell $(i,j)$ and each observation time $t_k$, the retarded time is computed as $t_{\mathrm{ret},ij} = t_k - R_{ij}/c$, accounting for the finite speed of light over the source to observer distance $R_{ij}$. Since the retarded time generally does not coincide with a discrete simulation time step, it is converted to a fractional array index:
+\begin{equation}
+    \tau = \frac{t_{\mathrm{ret}} - t_1}{\Delta t} + 1,
+\end{equation}
+which maps the continuous retarded time onto the discrete time grid. The integer part $\lfloor\tau\rfloor$ identifies the two adjacent stored time steps that bracket the retarded time, computed in MATLAB using the \texttt{floor} function. Linear interpolation is then applied between these two steps:
+\begin{equation}
+    \dot{\mathbf{J}}_{\mathrm{ret}} = (1 - \alpha)\,\dot{\mathbf{J}}(\mathbf{r}'_{ij}, t_{\lfloor\tau\rfloor}) + \alpha\,\dot{\mathbf{J}}(\mathbf{r}'_{ij}, t_{\lfloor\tau\rfloor+1}),
+\end{equation}
+where $\alpha = \tau - \lfloor\tau\rfloor$ is the fractional part. The main implementation challenge here is that $\dot{\mathbf{J}}$ is stored as a three dimensional array, and the time index required for each spatial cell is different because each cell has a different distance $R_{ij}$ to the observer. A na\"ive implementation would require nested loops over all $N_x \times N_y$ cells, which would be prohibitively slow. Instead, the code constructs linear indices into the three-dimensional array using manual index arithmetic:
+\begin{verbatim}
+    idx1 = grid_y + (grid_x-1)*Ny + (k1_safe-1)*(Ny*Nx);
+\end{verbatim}
+The matrices \texttt{grid\_y} and \texttt{grid\_x} are pre computed using \texttt{ndgrid} and contain the row and column indices for every cell. The variable \texttt{k1\_safe} is the clamped time index matrix. This expression converts the three dimensional subscript $(j, i, k)$ into a single linear index in column major order, allowing the entire interpolation to be performed as a single element wise array operation:
+\begin{verbatim}
+    dJx_ret = (1-alpha).*dJx(idx1) + alpha.*dJx(idx2);
+\end{verbatim}
+This accesses the correct time slice for each spatial cell simultaneously without any loop.\newline
+A boolean validity mask \texttt{valid = (k1 >= 1) \& (k2 <= Nt)} identifies source cells whose retarded time falls within the simulation window. Cells outside this range are clamped using \texttt{max(1, min(Nt, k1))} to prevent array index errors during interpolation, and their contributions are subsequently zeroed out with \texttt{dJx\_ret(\textasciitilde valid) = 0}. This two step approach of clamping first and then masking avoids conditional branching within the vectorised computation while ensuring physically correct results.\newline
+The double cross product $\hat{\mathbf{R}} \times [\hat{\mathbf{R}} \times \dot{\mathbf{J}}]$ in Equation~(\ref{eq:discrete}) extracts the transverse component of the current acceleration relative to the line of sight. Rather than computing two sequential cross products, the implementation uses the vector triple product identity $\mathbf{A} \times (\mathbf{B} \times \mathbf{C}) = \mathbf{B}(\mathbf{A} \cdot \mathbf{C}) - \mathbf{C}(\mathbf{A} \cdot \mathbf{B})$, which gives:
+\begin{equation}
+    \hat{\mathbf{R}} \times [\hat{\mathbf{R}} \times \dot{\mathbf{J}}] = (\hat{\mathbf{R}} \cdot \dot{\mathbf{J}})\,\hat{\mathbf{R}} - \dot{\mathbf{J}},
+\end{equation}
+where the second term simplifies because $\hat{\mathbf{R}} \cdot \hat{\mathbf{R}} = 1$. This reduces the operation to a single dot product and two vector scalings. In MATLAB, this is implemented as:
+\begin{verbatim}
+    dJdot = Rhat_x.*dJx_ret + Rhat_y.*dJy_ret + Rhat_z.*dJz_ret;
+    Tx = dJdot.*Rhat_x - dJx_ret;
+    Ty = dJdot.*Rhat_y - dJy_ret;
+\end{verbatim}
+The variable \texttt{dJdot} holds the scalar dot product $\hat{\mathbf{R}} \cdot \dot{\mathbf{J}}$ computed element wise over the full $N_y \times N_x$ grid, and \texttt{Tx}, \texttt{Ty} are the resulting transverse field components. The element wise multiplication operator \texttt{.*} ensures that each spatial cell uses its own local values of $\hat{\mathbf{R}}$ and $\dot{\mathbf{J}}_{\mathrm{ret}}$, preserving the spatially varying geometry. This formulation is not only computationally more efficient but also numerically more stable, as it avoids the subtraction of nearly equal cross product terms that can occur at small observation angles. The spatial summation is then performed using nested \texttt{sum} calls:
+\begin{verbatim}
+    Ex(k) = (mu0/(4*pi)) * sum(sum(Tx./R_mat)) * dx * dy;
+\end{verbatim}
+This sums the integrand over all $N_y$ rows and $N_x$ columns in a single expression, multiplied by the area element $\Delta x\,\Delta y$ to approximate the surface integral. The entire sequence of interpolation, cross product, and summation is executed once per observation time step $t_k$ within a \texttt{for} loop over $k = 1$ to $N_t$.\newline
+The overall computational cost of the far field calculation scales as $\mathcal{O}(N_x \cdot N_y \cdot N_t)$ per observation point. For the default GUI parameters of $N_x = N_y = 601$ and $N_t = 800$ output time steps over a window from $-5$~ps to $40$~ps, a single-point waveform calculation completes within approximately one minute on a standard desktop computer. The main performance bottleneck is the outer \texttt{for} loop over observation times $t_k$, which cannot be vectorised because the retarded time $t_{\mathrm{ret},ij}$ depends on the current value of $t_k$, meaning each iteration requires a different set of interpolation indices. However, all spatial operations within each time step are fully vectorised, operating on $N_y \times N_x$ matrices rather than looping over individual grid cells.\newline
+The carrier transport simulation requires a much finer internal time grid with $\Delta t_{\mathrm{fine}} = 0.5$~fs. This small step size is needed because the forward Euler method is only numerically stable when $\Delta t \leq 0.95\, h^2/(4D)$, where $h$ is the spatial grid spacing and $D$ is the diffusion coefficient. With a fine spatial grid, $h$ is small and $h^2$ is very small, which forces the time step to be correspondingly small. However, this fine time resolution is only necessary for the carrier transport stage. The far field radiation calculation does not need this many time steps, so the carrier dynamics are resampled onto a coarser output grid of $N_t = 800$ steps using MATLAB's \texttt{interp1} function before being passed to the far field computation. This reduces both memory usage and computation time without affecting the accuracy of the carrier transport.
+
+\subsubsection{Spatial 2D Field Mapping}
+The single point waveform calculation described in Section~3.3.2 returns the temporal evolution of the radiated field at one observation coordinate, which is sufficient for comparing the simulation against time domain spectroscopy data but does not by itself reveal the polarisation pattern that distinguishes the photo-dember and built-in field mechanisms. To address this, a separate routine \texttt{compute\_THz\_E\_spatial\_2D.m} extends the same retarded potential framework to a two dimensional grid of observation points evaluated at a single fixed observation time, producing the transverse field components $E_x$ and $E_y$ as functions of the lateral coordinates $(X_0, Y_0)$ on a plane parallel to the source. The output is intended to be rendered as a quiver plot, so that the radial or linear polarisation structure of the radiated pulse can be inspected directly within the GUI.
+
+The routine accepts the same source side inputs as the single point implementation, namely the spatial grid vectors $x$ and $y$, the time vector $t$, and the three component current density history $\mathbf{J}(\mathbf{r}', t)$ stored as the arrays \texttt{Jx}, \texttt{Jy}, and \texttt{Jz} of size $N_y \times N_x \times N_t$. Two additional inputs specify the observation grid: the matrices \texttt{X0\_grid} and \texttt{Y0\_grid}, generated through \texttt{meshgrid} over a coarse $11 \times 11$ lattice that spans a $\pm 50~\mu\mathrm{m}$ window centred on the optical axis. A scalar standoff distance \texttt{z0} fixes the height of the observation plane above the source surface, and a scalar observation time \texttt{t\_obs} selects the snapshot at which the spatial field is evaluated. In the GUI workflow, \texttt{t\_obs} is set automatically to the time of peak field magnitude obtained from the single point waveform $|\mathbf{E}(\mathbf{r}, t)|$, so that the spatial map captures the field at the instant when the radiated pulse is strongest.
+
+The first stage of the routine reproduces the time differentiation of Section~3.3.2 verbatim. A second order central finite difference scheme is applied to each component of $\mathbf{J}$ along the third array dimension, producing $\dot{\mathbf{J}}(\mathbf{r}', t)$ as three full history arrays of the same shape as the inputs. The differentiation is performed once outside the spatial loop, since the same $\dot{\mathbf{J}}$ is reused for every observation point. The boundary time steps are zeroed in the same manner as in the single point case.
+
+The remaining work is organised as a double loop over the rows and columns of \texttt{X0\_grid}. For each observation point $(X_0, Y_0, z_0)$, the routine first computes the displacement to every source cell:
+\begin{equation}
+    R_{ij} = \sqrt{(X_0 - x_i)^2 + (Y_0 - y_j)^2 + z_0^2},
+    \label{eq:R_spatial}
+\end{equation}
+together with the unit vector components $\hat{R}_{x,ij}, \hat{R}_{y,ij}, \hat{R}_{z,ij}$, evaluated as element wise array operations over the full source grid. The same singularity guard \texttt{R(R==0)~=~eps} as in the single point implementation is applied. The retarded time at each source cell is computed as $t_{\mathrm{ret},ij} = t_{\mathrm{obs}} - R_{ij}/c$ and converted to a fractional array index $\tau_{ij} = (t_{\mathrm{ret},ij} - t_1)/\Delta t + 1$. Source cells whose retarded time falls outside the simulation window are flagged through a boolean mask \texttt{valid}, while index clamping with \texttt{max(1,~min(Nt,~k))} prevents out-of-range access during the subsequent interpolation step.
+
+A notable implementation difference from the single point routine appears in the retarded time interpolation. Because each observation point requires its own array of retarded indices, vectorising the interpolation across both the source grid and the observation grid simultaneously would generate intermediate arrays of size $N_y \times N_x \times N_{\mathrm{obs},x} \times N_{\mathrm{obs},y}$, exceeding the available memory for the default $601 \times 601$ source resolution. The current implementation therefore performs the linear interpolation through an inner loop over the $N_y \times N_x$ source cells:
+\begin{equation}
+    \dot{J}_{x,\mathrm{ret}}(i,j) = (1 - \alpha_{ij})\,\dot{J}_x(\mathbf{r}'_{ij}, t_{k_1}) + \alpha_{ij}\,\dot{J}_x(\mathbf{r}'_{ij}, t_{k_2}),
+    \label{eq:interp_spatial}
+\end{equation}
+applied identically to $\dot{J}_y$ and $\dot{J}_z$. The trade off was made deliberately during development: the inner loop adds computational overhead but keeps the working memory bounded by the size of a single $\dot{\mathbf{J}}$ slice, which allows the routine to operate at the full source resolution without modification of the upstream solver.
+
+Once $\dot{\mathbf{J}}_{\mathrm{ret}}$ has been assembled across the source grid, the transverse projection is evaluated through the vector triple product identity introduced in Section~3.3.2:
+\begin{equation}
+    \mathbf{T} = (\hat{\mathbf{R}} \cdot \dot{\mathbf{J}}_{\mathrm{ret}})\,\hat{\mathbf{R}} - \dot{\mathbf{J}}_{\mathrm{ret}},
+\end{equation}
+of which only the $T_x$ and $T_y$ components are retained, since the spatial map is intended to display the in plane field vectors. The two transverse components of the radiated field are then obtained as discrete surface integrals:
+\begin{equation}
+    E_x(X_0, Y_0) = \frac{\mu_0}{4\pi} \sum_{i=1}^{N_x} \sum_{j=1}^{N_y} \frac{T_{x,ij}}{R_{ij}}\,\Delta x\,\Delta y,
+    \label{eq:Ex_spatial}
+\end{equation}
+with an analogous expression for $E_y(X_0, Y_0)$. The double sum is implemented as nested calls to \texttt{sum}, in the same manner as in the single point routine. The $E_z$ component is not computed, since the GUI represents the field through a quiver plot of the in plane vectors and the longitudinal component carries no information about the transverse polarisation pattern.
+
+The cost of the spatial routine scales as $\mathcal{O}(N_{\mathrm{obs}}^2 \cdot N_x \cdot N_y)$, where $N_{\mathrm{obs}}$ is the side length of the observation grid. Restricting the observation lattice to $11 \times 11$ points keeps the total runtime to a few seconds when called once per simulation cycle, and the resulting field map is displayed alongside the temporal waveforms in the lower output region of the GUI described in Section~3.4. The radial outward orientation of the in plane vectors produced by the photo-dember mechanism, and the linear pattern produced by the built-in field mechanism, both emerge from the same routine without any change to the underlying numerical procedure, providing a consistent visual indicator of the radiation symmetry that complements the quantitative single-point waveforms.
+
+\subsection{MATLAB GUI Interface Design}
+The numerical engine described in Section~3.3 produces large multidimensional arrays of carrier density and current data, but extracting physical insight from these arrays through command line scripting alone is cumbersome and error prone. To address this, an integrated graphical user interface was developed in MATLAB App Designer to act as a front end for the diffusion recombination solver and the far field radiation module. The motivation behind this design choice was twofold: first, App Designer offers native interoperability with the MATLAB workspace, allowing the same numerical routines used in standalone scripts to be invoked without intermediate data serialisation; second, its event driven architecture supports the kind of interactive parameter exploration that is essential when investigating how material properties influence the radiated waveform. Alternative frameworks such as PyQt or web based dashboards were considered during the planning stage but were ultimately rejected because they would have introduced an additional inter-process communication layer between the visualisation front-end and the MATLAB simulation kernel.
+
+\subsubsection{Layout and Functional Organisation}
+The interface adopts a tabbed, panel based layout that separates parameter entry from visualisation, as shown in Figure~\ref{fig:gui_complete}. The upper half of the application window contains the input region on the left and a three dimensional geometry preview on the right, while the lower half is reserved for the four output panels that display simulation results. Input parameters are grouped into four tabs according to their physical role, which prevents the visual clutter associated with single page forms and guides the user through the configuration sequence in a logical order.
+
+The first tab, \textit{Mechanism Selector}, exposes a radio-button group with three mutually exclusive options: \textit{Built-In Field}, \textit{Photo-Dember Effect}, and \textit{Custom}. Selecting the first or second option routes execution to the standard drift diffusion engine with the corresponding physics toggle activated, whereas the \textit{Custom} option reveals three additional text area fields for user defined expressions of the current density components $J_x$, $J_y$, and $J_z$. A read only reference panel listing the allowed variables ($n$, $\partial n/\partial x$, $\partial n/\partial y$, $X$, $Y$, $t$) appears alongside these fields, providing the user with the symbolic vocabulary required to construct valid formulas. The remaining tabs collect numerical material parameters (mobility, recombination lifetime, absorption depth, and lattice temperature), optical excitation parameters (pulse FWHM, fluence, spot size, incidence angle, and pulse shape), and the three Cartesian coordinates of the far-field observation point.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.85\linewidth]{interim_report_latex_template (1)/figure/shenglong/parameter.png}
+    \caption{
+        Tabbed parameter entry region of the GUI. The Mechanism Selector tab is shown with three exclusive options for the photocurrent source. Selecting custom reveals additional text fields for user-defined $J_x$, $J_y$, and $J_z$ expressions together with a list of allowed variables.
+    }
+    \label{fig:gui_param}
+\end{figure}
+
+\subsubsection{Parameter Handling and Custom Mechanism Parsing}
+A central design challenge was to translate user facing inputs, which are typically expressed in engineering units that physicists find intuitive, into the numerical form required by the simulation engine. The callback associated with the \textit{Update Geometry} push button performs this translation inside a dedicated private method, \texttt{runDiffusionEngine}, that constructs a parameter struct from the GUI fields. Several non trivial conversions are carried out at this stage. The pulse full width at half maximum entered by the user is rescaled to the Gaussian standard-deviation form $\tau_p = \mathrm{FWHM}/\sqrt{2\ln 2}$ that the analytical pulse model expects. The fluence value, supplied in J/cm$^2$, is converted to peak intensity through
+\begin{equation}
+    I_0 = \frac{F\,\cos\theta}{4\,\tau_p},
+\end{equation}
+where the cosine factor accounts for the geometric reduction in fluence under oblique incidence. Diffusion coefficients for electrons and holes are derived from the user-supplied mobility via the Einstein relation $D = \mu k_B T / q$, with the hole mobility approximated as one tenth of the electron value to reflect the typical asymmetry observed in III-V semiconductors~\cite{Reklaitis2010}. The absorption coefficient is obtained as the reciprocal of the absorption depth, with a lower bound of $10^{-9}$~m to prevent numerical overflow.
+
+Input validation is performed before the parameter struct is dispatched to the solver. Non positive values for the recombination lifetime or absorption depth raise a modal alert via \texttt{uialert}, and the callback returns without invoking the engine. This prevents the simulation from entering an undefined state and provides the user with immediate, contextual feedback. Stale results from previous runs are explicitly cleared at the start of each callback execution by setting the \texttt{SimResults} property to an empty array, which guarantees that downstream plotting routines never display data inconsistent with the current parameter set.
+
+The \textit{Custom} mechanism mode required a more elaborate parsing pipeline because user supplied formulas must be compiled into MATLAB function handles at runtime. Within the \texttt{runCustomEngine} method, the contents of the three text area fields are first concatenated using \texttt{strjoin} to flatten any line breaks introduced by multi line entry. Empty entries default to the string \texttt{'0'} so that an unspecified component contributes nothing to the radiated field rather than raising a syntax error. The resulting expressions are wrapped in anonymous function syntax through \texttt{str2func}:
+\begin{verbatim}
+    hx = str2func(['@(n,dnx,dny,X,Y,t) ' fx]);
+\end{verbatim}
+A wrapper handle is then constructed that evaluates all three components in a single call and returns them via \texttt{deal}, ensuring that the physics engine receives a uniformly typed callable. To detect dimensional inconsistencies before they propagate into the time stepping loop, the wrapper is invoked on a small test grid of size $3 \times 4$ and the output dimensions are compared to those of the input through \texttt{isequal}. Any mismatch triggers an explanatory alert, which is particularly useful when a user inadvertently writes a formula that collapses an array dimension, for example by using scalar division where element-wise division was intended. A \texttt{try/catch} block surrounds the entire compilation step to convert MATLAB's raw error messages into user readable dialog boxes.
+
+\subsubsection{Visualisation and Performance}
+The right hand panel of the upper region renders a three dimensional schematic of the semiconductor slab and the incident laser beam, drawn through two private methods, \texttt{plotSample} and \texttt{plotBeam}. The semiconductor is represented as a rectangular cuboid by enumerating its six faces and rendering each through MATLAB's \texttt{patch} function with semi transparent shading. The laser beam is generated using \texttt{cylinder} and rotated about the $y$-axis by the user-specified incidence angle through a standard rotation matrix:
+\begin{equation}
+    \begin{pmatrix} X' \\ Z' \end{pmatrix}
+    =
+    \begin{pmatrix} \cos\theta & \sin\theta \\ -\sin\theta & \cos\theta \end{pmatrix}
+    \begin{pmatrix} X \\ Z \end{pmatrix}.
+\end{equation}
+This rotation is applied to the cylindrical surface coordinates before rendering, so that changing the incidence angle in the \textit{Excitation} tab and pressing \textit{Update Geometry} immediately produces an updated visual representation. The geometry view serves both as a sanity check that the entered parameters describe a physically meaningful configuration and as an aid when explaining the experimental setup to a non specialist audience.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.65\linewidth]{interim_report_latex_template (1)/figure/shenglong/3d.png}
+    \caption{
+        Three dimensional schematic produced by the geometry preview panel. The translucent slab represents the semiconductor surface, and the orange cylinder represents the incident laser beam after rotation about the $y$-axis by the configured incidence angle.
+    }
+    \label{fig:gui_geometry}
+\end{figure}
+
+The lower region of the application contains four output displays that are populated in sequence after the simulation engine returns. The \texttt{plotTransientCurrentGUI} method renders the central carrier density $n(0,0,t)$ as a temporal trace, which serves as a one dimensional proxy for the integrated photocurrent. The \texttt{plotCarrierDistributionGUI} method displays the spatial distribution $n(x,y,t^*)$ at the time $t^*$ of peak central density, using \texttt{imagesc} with the $y$-axis direction reversed to match the physical convention. The \texttt{plotTHzFieldGUI} method populates a tabbed group with three separate axes for the $E_x$, $E_y$, and $E_z$ components of the radiated field at the user specified observation point. Finally, \texttt{plotSpatialRadiationGUI} draws a quiver plot of the transverse field vectors $(E_x, E_y)$ on the observation plane using the coarse $11 \times 11$ grid produced by the \texttt{compute\_THz\_E\_spatial\_2D} routine, allowing the user to inspect the polarisation structure described in Section~3.3.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\linewidth]{interim_report_latex_template (1)/figure/shenglong/complete.png}
+    \caption{
+        Complete GUI overview after a successful simulation run. The upper region shows the parameter tabs and the geometry preview. The lower region displays the central carrier density trace, the carrier distribution at peak time, and the radiated field at the chosen observation point.
+    }
+    \label{fig:gui_complete}
+\end{figure}
+
+Coupling a computationally expensive solver to a single threaded GUI raised concerns about responsiveness, particularly during the far field summation, which dominates total runtime. Two design choices were made to mitigate this. First, the standard mechanism path uses the high resolution spatial grid of $601 \times 601$ points required for accurate field reconstruction, while the \textit{Custom} path operates on a reduced $201 \times 201$ grid, recognising that user defined formulas are typically used for exploratory work where rapid feedback matters more than fine spatial resolution. Second, the spatial radiation map is restricted to an $11 \times 11$ observation grid, which limits the additional cost relative to a single point waveform calculation while still revealing the radial polarisation pattern. With these settings, a complete simulation cycle from button press to fully rendered output typically completes within approximately one minute on a standard desktop machine, which was judged acceptable for an interactive exploratory tool.
+
+The resulting interface forms a complete front end to the photocurrent simulation pipeline, mapping user defined physical parameters onto the diffusion solver, the far field integrator, and the spatial field mapping routine in a single coordinated workflow. A blank instance of the application is shown in Figure~\ref{fig:gui_blank} for reference; populated outputs corresponding to the default parameter set appear in Figure~\ref{fig:gui_complete}.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.85\linewidth]{interim_report_latex_template (1)/figure/shenglong/blank.png}
+    \caption{
+        Initial state of the GUI before any simulation has been executed. All output axes display empty default coordinate frames, and the geometry preview awaits the first invocation of the \textit{Update Geometry} callback.
+    }
+    \label{fig:gui_blank}
+\end{figure}
+%% ============================================================
+%% RESULTS AND DISCUSSION
+%% ============================================================
+\section{Results}
+\subsection{Photo-Dember Model Results}
+\subsubsection{Carrier Dynamics and Diffusion Current Formation}
+
+The photo-dember simulation first examined the carrier dynamics using the diffusion recombination model described in Section~3.1. A Gaussian optical excitation was applied in both space and time to represent the ultrafast laser pulse. As shown in Figure~\ref{fig:pd_1d_density}, the carrier density rises rapidly near the pulse arrival time and then decreases gradually after reaching its peak. The spatial distribution becomes broader over time as diffusion spreads the carrier population away from the excitation centre, consistent with the expected diffusion and recombination processes in semiconductors.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.75\linewidth]{interim_report_latex_template (1)/figure/yuhao/f1.png}
+    \caption{Space time evolution of the carrier density in the one-dimensional photo-dember model. The initial bright region corresponds to the optical excitation, and the later broadening shows carrier diffusion over time.}
+    \label{fig:pd_1d_density}
+\end{figure}
+
+The simulation was then extended to two dimensions to capture the radial symmetry of the excitation spot, using a circular Gaussian profile for the laser beam and solving the carrier transport in the $x$-$y$ plane. As shown in Figure~\ref{fig:pd_2d_current}, the calculated current vectors point radially outward from the high density centre, reflecting the diffusion of carriers toward lower density regions. The current is strongest shortly after excitation, when the carrier density gradient is largest, and weakens at later times as the distribution becomes more uniform. The strongest current does not occur at the exact centre, where the density gradient is close to zero, but rather at the flanks of the Gaussian distribution where the density changes most rapidly.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.85\linewidth]{interim_report_latex_template (1)/figure/yuhao/f2.png}
+    \caption{Electron density distribution and diffusion current vectors in the two-dimensional photo-dember model. The current vectors point outward from the high density centre, indicating radial diffusion.}
+    \label{fig:pd_2d_current}
+\end{figure}
+
+These results demonstrate that ultrafast optical excitation produces a transient diffusion current through carrier redistribution, providing the physical source of THz emission in the photo-dember mechanism. The next section evaluates whether the far field THz radiation generated from this current agrees with experimental observations.
+
+\subsubsection{Far-field THz Angular Emission Validation}
+The photo-dember effect arises from the ultrafast lateral diffusion of photo-generated carriers following femtosecond laser excitation. Because electrons have a significantly higher mobility than holes, they diffuse outward faster, creating a transient charge separation and a net radial photocurrent $\mathbf{J} = q(D_e - D_h)\nabla n$ that radiates THz electromagnetic waves. The simulation results presented in this section validate the photo-dember transport model by comparing the angular emission pattern with published experimental data.
+
+To validate the simulated far field radiation pattern, the angular response was compared with the experimental data presented in Fig.~8(b) of Mueckstein et al.~\cite{Mueckstein2015}, who measured the peak to peak THz amplitude emitted from Fe:InGaAs surfaces excited at normal incidence with a 250~$\mu$m-diameter beam at 800~nm. The simulation was run in photo-dember mode, since Mueckstein et al.\ demonstrated that the lateral in plane photocurrents are the dominant THz generation mechanism in Fe:InGaAs, with the built-in field contribution being negligible due to the small band-bending in this narrow bandgap material. The material parameters were chosen to match the experimental conditions: electron mobility $\mu_e = 0.5$~m$^2$/Vs, hole mobility $\mu_h = 0.02$~m$^2$/Vs, carrier lifetime $\tau_r = 300$~fs, absorption coefficient $\alpha = 10^6$~m$^{-1}$ at 800~nm, and beam waist $w_0 = 106~\mu$m corresponding to a FWHM spot diameter of approximately 250~$\mu$m.
+
+The lateral observation position was fixed at $X_0 = 3.2$~mm while the vertical position $Z_0$ was varied to sweep the observation angle
+\begin{equation}
+    \theta_1 = \tan^{-1}\!\left(\frac{X_0}{Z_0}\right),
+\end{equation}
+measured from the surface normal. The corresponding source to observer distance for each configuration is $R = \sqrt{X_0^2 + Z_0^2}$. At each angle, the full time domain waveform was computed using \texttt{compute\_THz\_E\_from\_Jx}, and the $E_z$ component was selected as the detector like signal because, for an observation point in the $xz$-plane, the $z$-component captures the projection of the radially polarised far-field onto the vertical axis, which varies most strongly with emission angle. The peak to peak amplitude was then extracted as
+\begin{equation}
+    E_{\mathrm{pp}} = \max\bigl(E_z(t)\bigr) - \min\bigl(E_z(t)\bigr),
+\end{equation}
+which captures the full bipolar swing of the transient waveform rather than only the positive peak.
+
+Because $X_0$ was held constant while $Z_0$ was varied, the source to observer distance $R$ changes with angle. In the far field regime, the radiation amplitude decays as $1/R$, so a distance correction was applied to isolate the intrinsic angular dependence of the source:
+\begin{equation}
+    E_{\mathrm{pp,corr}} = E_{\mathrm{pp}} \times R.
+\end{equation}
+The corrected values were then normalised by their maximum:
+\begin{equation}
+    E_{\mathrm{pp,norm}} = \frac{E_{\mathrm{pp,corr}}}{\max(E_{\mathrm{pp,corr}})}.
+\end{equation}
+
+Table~\ref{tab:angular} lists the distance corrected and normalised peak to peak amplitudes for 19 observation angles spanning $18^\circ$ to $90^\circ$. The resulting angular emission pattern is plotted in Figure~\ref{fig:angular_sim}.
+
+\begin{table}[t]
+\centering
+\caption{Distance corrected and normalised far field peak to peak amplitude $E_{\mathrm{pp}}$ using the $E_z$ component. The maximum corrected amplitude occurs at $\theta_1 = 25^\circ$.}
+\label{tab:angular}
+\small
+\begin{tabular}{r r r r r r}
+\toprule
+$\theta_1$ (deg) & $E_{\mathrm{pp,corr}}$ & $E_{\mathrm{pp,norm}}$
+&
+$\theta_1$ (deg) & $E_{\mathrm{pp,corr}}$ & $E_{\mathrm{pp,norm}}$ \\
+\midrule
+18 & 944579.21 & 0.960 & 50 & 709373.71 & 0.721 \\
+20 & 954827.59 & 0.970 & 55 & 632516.39 & 0.643 \\
+22 & 969064.67 & 0.985 & 60 & 548824.05 & 0.558 \\
+25 & 984320.25 & 1.000 & 65 & 461861.39 & 0.469 \\
+28 & 975306.37 & 0.991 & 70 & 372318.87 & 0.378 \\
+30 & 958110.40 & 0.973 & 75 & 280706.05 & 0.285 \\
+35 & 914776.02 & 0.929 & 80 & 188521.10 & 0.192 \\
+40 & 853777.96 & 0.867 & 85 & 94227.23  & 0.096 \\
+45 & 780287.46 & 0.793 & 90 & 86.00     & 0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.6\linewidth]{interim_report_latex_template (1)/figure/yaoqqi/different_observation_angles.png}
+    \caption{Simulated time domain THz waveforms detected at selected observation angles. The $E_z$ component was used as the detector like signal.
+    }
+    \label{fig:pulse_detected}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.6\linewidth]{interim_report_latex_template (1)/figure/yaoqqi/result1.png}
+    \caption{
+        Simulated far field angular emission pattern. The normalised peak to peak amplitude $E_{\mathrm{pp,norm}}$ is plotted as a function of the emission angle $\theta_1$ from the surface normal.
+    }
+    \label{fig:angular_sim}
+\end{figure}
+
+The simulated pattern exhibits the characteristic features of in plane dipole radiation: negligible emission near the surface normal, a broad maximum centred at $\theta_1 \approx 25^\circ$, and a monotonic decrease toward incidence. These features are in close qualitative agreement with the experimental data of Mueckstein et al.~\cite{Mueckstein2015}, where the measured emission from Fe:InGaAs peaks in the range $20^\circ$--$30^\circ$ and vanishes along the surface normal.
+
+The null at $\theta_1 = 0^\circ$ arises because the radially symmetric photo-dember source produces equal and opposite transverse field contributions from diametrically opposite source cells, which cancel exactly along the symmetry axis, as predicted by the double cross product in Equation~(\ref{eq:farfield}). The broad peak at intermediate angles reflects the trade off between two competing geometric effects: at small angles the transverse projection of $\dot{\mathbf{J}}$ is weak, while at large angles the oblique path through the source increases $R$ and reduces the solid angle subtended by the detector.
+
+The simulated peak angle of $25^\circ$ falls within the experimentally observed range of $20^\circ$--$25^\circ$, demonstrating good quantitative agreement. Minor residual differences in the detailed shape of the pattern may arise from several factors: the simulation employs a drift diffusion model that does not capture ballistic carrier transport in the first few hundred femtoseconds, the model does not account for refraction at the semiconductor, and the Fe:InGaAs material parameters are approximate values from the literature rather than measured values for the specific epilayer used by Mueckstein et al. Despite these simplifications, the close agreement in both the peak angle and the overall shape of the angular pattern validates the retarded potential framework combined with the photo-dember source model as a physically meaningful description of far field THz emission from semiconductor surfaces.
+
+\subsection{Built-in Field Model Results}
+\subsubsection{Field Profile, Carrier Separation, and Photocurrent}
+
+Figure~\ref{fig:built_in_overview} summarises the built-in field simulation results. The prescribed electric field profile (Figure~\ref{fig:built_in_field_profile}) followed the cosine decay defined in Equation~(\ref{eq:built_in_field_profile}), reaching $-8 \times 10^5$~V/m at the surface and smoothly decaying to zero at the depletion edge $W_{\mathrm{dep}} = 0.5~\mu\mathrm{m}$ (red dashed line). Beyond the depletion region, the field remained zero and carriers experienced no drift force.
+
+Figure~\ref{fig:built_in_carrier_separation} shows the electron and hole density distributions at $t = 1.0$~ps. The hole density (red dashed) peaked at the surface and decayed with depth, following the optical absorption profile. In contrast, the electron density (blue solid) was nearly zero at the surface and peaked around $z \approx 0.3$--$0.4~\mu\mathrm{m}$, showing that the built-in field had already swept electrons away from the surface into the bulk. This spatial separation between the two carrier types is the origin of the vertical drift current. The behaviour differs from the photo-dember model, where carrier motion is mainly radial and symmetric in the $x$-$y$ plane.
+
+The total numbers of electrons and holes remained almost equal throughout the simulation (Figure~\ref{fig:built_in_total_carrier_number}), rising rapidly during the laser pulse, peaking near $t \approx 0.5$~ps, and then decaying gradually due to recombination. The close overlap of the two curves confirmed that carriers were generated and removed in pairs, as expected. The key result was not the total number itself, but the spatial separation between the two carrier types.
+
+This separation produced a transient photocurrent along the depth direction. As shown in Figure~\ref{fig:built_in_photocurrent}, the photocurrent reached a peak magnitude of approximately $3 \times 10^{-5}$~A shortly after the pulse peak (red dashed marker) and then decayed over several picoseconds as recombination reduced the carrier population. The negative sign indicates that the net current flowed towards the surface in the simulation coordinate system, consistent with the electron drift direction defined by Equation~(\ref{eq:drift_velocities}). The fast sub picosecond rise and slower decay of this current confirmed that the built-in field can produce an ultrafast transient photocurrent suitable for driving THz emission.
+
+\begin{figure}[t]
+	\centering
+	\begin{subfigure}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{interim_report_latex_template (1)/figure/yuhao/1.png}
+		\caption{Built-in electric field profile}
+		\label{fig:built_in_field_profile}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{interim_report_latex_template (1)/figure/yuhao/2.png}
+		\caption{Electron and hole density distributions}
+		\label{fig:built_in_carrier_separation}
+	\end{subfigure}
+
+	\vspace{0.5em}
+
+	\begin{subfigure}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{interim_report_latex_template (1)/figure/yuhao/3.png}
+		\caption{Integrated electron and hole numbers}
+		\label{fig:built_in_total_carrier_number}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{interim_report_latex_template (1)/figure/yuhao/4.png}
+		\caption{Transient photocurrent}
+		\label{fig:built_in_photocurrent}
+	\end{subfigure}
+	\caption{Built-in field model results. (a)~Prescribed electric field profile in the depletion region. (b)~Electron and hole density distributions showing field driven separation. (c)~Integrated carrier numbers confirming pair generation and recombination. (d)~Transient photocurrent generated by the surface depletion field.}
+	\label{fig:built_in_overview}
+\end{figure}
+
+\subsubsection{Bipolar Pulse Waveform}
+The far field radiation from any transient current source is proportional to $\dot{\mathbf{J}}(t_{\mathrm{ret}})$, the time derivative of the current density evaluated at the retarded time (Equation~\ref{eq:farfield}). For the built-in field mechanism, the vertical surge current $J_z(t)$ follows the temporal profile of the carrier density: it rises rapidly during the femtosecond laser excitation as carriers are photo generated and accelerated by the depletion field, then decays on a longer timescale as the carriers recombine and the depletion field is screened by charge separation. The time derivative $\dot{J}_z(t)$ is therefore positive during the rising phase and negative during the falling phase, producing a bipolar radiated pulse with a leading positive lobe followed by a trailing negative lobe. This characteristic waveform was first predicted by the Hertzian dipole model of Auston et al.~\cite{auston_picosecond_1984} and has since been confirmed in both Monte Carlo simulations of GaAs surface emission~\cite{SimulationTHz} and experimental THz time domain measurements~\cite{Reklaitis2010}.
+
+Figure~\ref{fig:ExEy} presents the simulated $E_x$ and $E_y$ waveforms computed in built-in field mode. The observation point $(3.2~\mathrm{mm},\, -3.2~\mathrm{mm},\, -6.0~\mathrm{mm})$ was chosen to be off axis in both $x$ and $y$ so that both transverse field components are non zero, and on the substrate side ($z < 0$) to represent the common experimental geometry in which THz radiation is collected through the substrate. Both components display the expected bipolar profile, but with opposite leading polarities: $E_x$ is positive first while $E_y$ is negative first. This sign difference arises from the geometric projection of the vertical current derivative $\dot{J}_z$ onto the transverse plane via the double cross product in Equation~(\ref{eq:farfield}). Since the observer is displaced in the positive $x$ direction, the projection onto $E_x$ acquires one sign, whereas the negative $y$ displacement produces the opposite sign in $E_y$. The bipolar shape, a sharp leading lobe followed by a broader trailing lobe of opposite polarity, is a direct consequence of the temporal asymmetry in the surge current $J_z(t)$. The leading lobe corresponds to the rapid onset of the photocurrent. The trailing lobe corresponds to the slower decay as carriers recombine with lifetime $\tau_r$, which is typically one to two orders of magnitude longer than the pulse duration. This asymmetric bipolar waveform is a well established signature of surface emitted THz pulses from semiconductors with a strong depletion field~\cite{SimulationTHz,auston_picosecond_1984}.
+
+Both components return to zero well within the 45~ps simulation window ($T_{\min} = -5$~ps to $T_{\max} = 40$~ps), confirming that the full transient is captured without truncation artefacts. The successful reproduction of the bipolar waveform, including the correct lobe asymmetry and temporal width, validates the built-in field implementation within the simulation framework.
+
+\begin{figure}[t]
+	\centering
+	\begin{subfigure}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{interim_report_latex_template (1)/figure/yaoqqi/Ex.png}
+		\caption{$E_x(t)$}
+		\label{fig:Ex}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{interim_report_latex_template (1)/figure/yaoqqi/Ey.png}
+		\caption{$E_y(t)$}
+		\label{fig:Ey}
+	\end{subfigure}
+	\caption{Temporal waveforms of (a)~$E_x(t)$ and (b)~$E_y(t)$ computed in built-in field mode at the observation point $(3.2~\mathrm{mm},\, -3.2~\mathrm{mm},\, -6.0~\mathrm{mm})$, on the substrate (transmitted) side. Both components exhibit the bipolar pulse shape predicted by the Hertzian dipole model~\cite{auston_picosecond_1984}: a sharp positive lobe from the rising surge current followed by a broader negative lobe from the decay phase.}
+	\label{fig:ExEy}
+\end{figure}
+
+\subsection{Custom Model Results}
+The custom mechanism mode allows users to define arbitrary current density expressions $J_x(n, \partial n/\partial x, \partial n/\partial y, x, y, t)$, $J_y(\cdots)$, and $J_z(\cdots)$ as MATLAB formulas that are parsed and compiled at runtime. To validate that this pipeline produces physically correct results, the custom mode was used to reproduce the built-in field mechanism, and the output was compared against the standard Built-In mode.
+
+In the built-in field model, the THz generating current arises from the drift of photo generated carriers in the surface depletion field. The depletion region extends to a depth $W_{\mathrm{dep}}$ below the semiconductor surface, within which a static electric field $E_z(z)$ accelerates electrons and holes in opposite vertical directions. The resulting net vertical current density is
+\begin{equation}
+    J_z(x,y,t) = q\,\mu_e\,E_z(z)\,n(x,y,t),
+    \label{eq:Jz_builtin}
+\end{equation}
+where $q$ is the elementary charge, $\mu_e$ is the electron mobility, and $n(x,y,t)$ is the carrier density at the surface. Crucially, $J_z$ is proportional to $n$: the spatial profile follows the Gaussian optical excitation envelope, and the temporal evolution follows the carrier generation and recombination dynamics. There is no lateral current in this mechanism, so $J_x = J_y = 0$.
+
+This proportionality means that the built-in field can be reproduced in custom mode by entering:
+\begin{center}
+\texttt{Jx = 0}, \quad \texttt{Jy = 0}, \quad \texttt{Jz = -n}
+\end{center}
+The expression \texttt{Jz = -n} captures the essential physics: the vertical current is proportional to the local carrier density and directed downward (negative $z$) because electrons drift against the depletion field. The physical prefactors $q$, $\mu_e$, and $E_z$ are omitted, so the custom output is expected to differ from the built-in output by a constant scale factor while preserving the identical waveform shape.
+
+Figure~\ref{fig:custom_validation} compares the $E_x$ component produced by the two modes at the same observation point. The temporal waveforms are identical in shape: both exhibit the same bipolar pulse structure with the same zero crossing time and the same ratio of positive to negative lobes. The only difference is the amplitude scale, which differs by a factor of approximately $10^{19}$. This factor is consistent with the missing physical constants: $q \cdot \mu_e \cdot E_{\mathrm{max}} \approx 1.6 \times 10^{-19} \times 0.8 \times 8 \times 10^{5} \approx 10^{-13}$~A/m, combined with the depth integration over the depletion region. The exact agreement in waveform shape confirms that the custom formula parser, the runtime compilation via \texttt{str2func}, and the subsequent far field integration all operate correctly.
+
+\begin{figure}[t]
+	\centering
+	\begin{subfigure}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{interim_report_latex_template (1)/figure/yaoqqi/Ex2.png}
+		\caption{Custom mode: \texttt{Jz = -n}}
+		\label{fig:custom_builtin}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{interim_report_latex_template (1)/figure/yaoqqi/Ex22.png}
+		\caption{Built-In Field mode}
+		\label{fig:standard_builtin}
+	\end{subfigure}
+	\caption{Comparison of the $E_x$ waveform produced by (a)~the custom mechanism with \texttt{Jz~=~-n} and (b)~the standard built-in field mode. The waveform shapes are identical; the amplitude difference ($\times 10^{23}$ vs $\times 10^{4}$) reflects the omitted physical prefactors $q\mu_e E_z$ in the custom expression.}
+	\label{fig:custom_validation}
+\end{figure}
+
+An analogous test was performed for the photo-dember mechanism. In this case, the THz generating current arises from the lateral diffusion of photo generated carriers. Because electrons and holes have different mobilities, they diffuse at different rates, producing a net lateral current proportional to the spatial gradient of the carrier density. The net photo-dember current for the $x$-component is
+\begin{equation}
+    J_x(x,y,t) = q(D_e - D_h)\frac{\partial n}{\partial x},
+    \label{eq:Jx_dember}
+\end{equation}
+where $D_e$ and $D_h$ are the electron and hole diffusion coefficients respectively. The positive sign arises because the electron charge is negative: the electron particle flux is $\boldsymbol{\Gamma}_e = -D_e \nabla n$ (down the gradient), but the corresponding current is $\mathbf{J}_e = -q\boldsymbol{\Gamma}_e = qD_e \nabla n$ (opposite to the particle flow). The hole current $\mathbf{J}_h = -qD_h \nabla p$ partially cancels the electron contribution, leaving a net current proportional to $(D_e - D_h)\nabla n$. An identical expression applies to $J_y$ with $\partial n/\partial y$, while $J_z = 0$ since the photo-dember effect produces no vertical current.
+
+This proportionality to the carrier density gradient means that the photo-dember mode can be reproduced in custom mode by entering:
+\begin{center}
+\texttt{Jx = dnx}, \quad \texttt{Jy = dny}, \quad \texttt{Jz = 0}
+\end{center}
+where \texttt{dnx} and \texttt{dny} are the spatial gradients $\partial n/\partial x$ and $\partial n/\partial y$ provided by the simulation engine. The physical prefactors $q$ and $(D_e - D_h)$ are omitted, so the output amplitude will differ by a corresponding scale factor.
+
+Figure~\ref{fig:custom_dember} compares the $E_x$ waveform from the two modes. The main bipolar pulse shape is reproduced faithfully: the same zero crossing time, lobe ratio, and temporal width. The amplitude differs by a factor of approximately $10^{20}$, consistent with the missing prefactor $q(D_e - D_h) \approx 1.6 \times 10^{-19} \times (0.021 - 0.0026) \approx 3 \times 10^{-21}$~C\,m$^2$/s.
+
+A minor difference is visible in the trailing positive feature at $t \approx 28.5$~ps: the bump is present in both waveforms but is more pronounced in the custom output. This arises from a key difference in how the two modes represent the lateral current. In the standard photo-dember mode, the spatial current pattern is factorised as
+\begin{equation}
+    J_x(x,y,t) = q\,D_{\mathrm{eff}}\, n_{\mathrm{surf}}(t) \cdot \frac{\partial G}{\partial x},
+\end{equation}
+where $\partial G/\partial x$ is the fixed spatial gradient of the Gaussian excitation envelope and $n_{\mathrm{surf}}(t)$ is a scalar time function representing the surface carrier density. Under this factorisation, the spatial shape of $J_x$ remains frozen as the initial Gaussian gradient at all times; only the overall amplitude varies. In the custom mode, however, the expression \texttt{Jx~=~dnx} evaluates the gradient of the full time evolving carrier density $n(x,y,t)$. As carriers diffuse laterally after excitation, the density profile broadens and the gradient pattern changes in both shape and position at every time step. This evolving spatial structure introduces additional time variation into $\dot{\mathbf{J}}$, which manifests as the enhanced trailing feature in the radiated field. The standard mode's factorised approximation suppresses this effect by construction, so its trailing bump is smaller. In this respect, the custom mode provides a more physically complete representation of the diffusion dynamics, albeit at the cost of the amplitude calibration provided by the built-in prefactors.
+
+Together with the built-in field validation above, this confirms that the custom mechanism parser correctly handles both lateral gradient driven and vertical drift driven current expressions, and that the far field integration pipeline produces physically consistent results regardless of the input pathway.
+
+\begin{figure}[t]
+	\centering
+	\begin{subfigure}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{interim_report_latex_template (1)/figure/yaoqqi/Photodember.png}
+		\caption{Photo-Dember mode}
+		\label{fig:standard_dember}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{interim_report_latex_template (1)/figure/yaoqqi/customPhotodember.png}
+		\caption{Custom mode: \texttt{Jx = dnx, Jy = dny}}
+		\label{fig:custom_dember_sub}
+	\end{subfigure}
+	\caption{Comparison of the $E_x$ waveform produced by (a)~the standard photo-dember mode and (b)~the custom mechanism with \texttt{Jx~=~dnx}, \texttt{Jy~=~dny}. The waveform shapes are identical; the amplitude difference ($\times 10^{8}$ vs $\times 10^{28}$) reflects the omitted prefactor $q(D_e - D_h)$.}
+	\label{fig:custom_dember}
+\end{figure}
+
+\subsection{Spatial 2D Field Mapping Results}
+
+The single point waveforms presented in Sections~4.1 and~4.2 capture the temporal evolution of the radiated field at a fixed observation coordinate, but they do not by themselves expose the polarisation structure that distinguishes the two photocurrent mechanisms. The spatial mapping routine described in Section~3.3.4 was therefore applied to a representative photo-dember configuration in order to verify that the simulated transverse field components reproduce the radial polarisation pattern reported by Mueckstein et al.~\cite{Mueckstein2015} and predicted by the symmetry argument associated with Equation~(\ref{eq:farfield}).
+
+The simulation was executed in photo-dember mode using the default InAs material parameters described in Section~3.1, with the source plane discretised onto the standard $601 \times 601$ grid spanning $1.5~\mathrm{mm} \times 1.5~\mathrm{mm}$. The observation lattice was an $11 \times 11$ grid covering a $\pm 60~\mu\mathrm{m}$ window centred on the optical axis at a standoff distance of $z_0 = 7.7~\mathrm{mm}$ above the surface. The snapshot time was selected automatically by the GUI as the instant of peak temporal field magnitude obtained from the single point waveform $|\mathbf{E}(\mathbf{r}, t)|$, which for this parameter set occurred at $t_{\mathrm{obs}} = 27.89~\mathrm{ps}$. At each lattice point, the routine \texttt{compute\_THz\_E\_spatial\_2D} returned the in-plane components $E_x(X_0, Y_0)$ and $E_y(X_0, Y_0)$ through the discrete surface integral of Equation~(\ref{eq:Ex_spatial}).
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.65\linewidth]{interim_report_latex_template (1)/figure/shenglong/spatial_2d.png}
+    \caption{Transverse field vectors $(E_x, E_y)$ computed across an $11 \times 11$ observation lattice at standoff distance $z_0 = 7.7~\mathrm{mm}$ and snapshot time $t_{\mathrm{obs}} = 27.89~\mathrm{ps}$, using the default photo-dember parameters. The arrows point radially outward from the optical axis with approximately uniform azimuthal magnitude, reproducing the polarisation pattern expected of an in plane diffusive source.}
+    \label{fig:spatial_2d}
+\end{figure}
+
+Figure~\ref{fig:spatial_2d} presents the resulting quiver plot. The arrows point radially outward from the centre of the observation window at every lattice position, and their magnitudes increase smoothly with radial distance from the optical axis. Both features are characteristic signatures of a radially polarised in plane source. The radial orientation arises directly from the structure of the source: the carrier density gradient $\nabla n$ on the InAs surface is itself radially symmetric about the laser excitation centre, so the diffusion current $\mathbf{J} = qD\nabla n$ inherits the same symmetry, and the transverse projection extracted by the double cross product in Equation~(\ref{eq:farfield}) preserves this orientation in the far field. The increase in vector magnitude with off axis distance reflects the cancellation that occurs along the surface normal. At $X_0 = Y_0 = 0$ the contributions from diametrically opposite source cells produce equal and opposite transverse projections that sum to zero, yielding the on axis null already discussed in Section~3.3.2 and observed in the angular emission pattern of Section~4.1. As the observation point moves off axis, this exact cancellation breaks down, and the radial field component grows accordingly.
+
+A short Cartesian inspection of the same data confirms that the structure is genuinely radial rather than being aligned with the simulation grid. Along the positive $x$-axis at $Y_0 = 0$, the vectors point in the $+\hat{x}$ direction with vanishing $E_y$ component, while along the positive $y$-axis at $X_0 = 0$ they point in the $+\hat{y}$ direction with vanishing $E_x$ component. The diagonal positions exhibit equal contributions from both components, so that the resultant points along the corresponding bisector. The pattern is therefore consistent with $\mathbf{E}_\perp(X_0, Y_0) \propto (X_0/\rho, Y_0/\rho)$ for radial coordinate $\rho = \sqrt{X_0^2 + Y_0^2}$, which is the canonical signature of a radially polarised emitter and matches the field topology measured experimentally for Fe:InGaAs surfaces in the near-field scanning study of Mueckstein et al.~\cite{Mueckstein2015}.
+
+The spatial map serves a complementary role to the temporal waveforms reported in the preceding subsections. The temporal traces establish that the simulation framework reproduces the expected pulse shapes and angular dependence, while the spatial map confirms that the underlying source geometry is correctly captured in the polarisation domain. When the same routine was executed in built-in field mode using the parameters of Section~3.2, the resulting vector pattern (not reproduced here for brevity) collapsed onto an approximately uniform linear orientation rather than the radial structure of Figure~\ref{fig:spatial_2d}, in agreement with the surface normal current direction characteristic of depletion field driven emission~\cite{YangTonouchi2022,SimulationTHz}. The contrast between the two patterns provides a visual diagnostic that distinguishes the two mechanisms within a single simulation cycle, complementing the quantitative validation against published angular and temporal data presented in Sections~4.1 and~4.2.
+
+\section{Discussion}
+
+\subsection{Model Assumptions and Limitations}
+The simulation framework relies on several simplifying assumptions whose impact on the results should be considered. The most significant is the use of drift-diffusion transport, in which the electron drift velocity is computed as $v_n = -\mu_e E_z$ and the diffusion flux as $-D_e\,\partial n/\partial z$, assuming that carriers instantaneously reach a steady state velocity set by the local electric field. In reality, after femtosecond excitation, photo generated carriers in III-V semiconductors undergo a brief ballistic phase lasting approximately 100--300~fs before enough scattering events occur to establish the steady state drift regime~\cite{Lu2022}. During this phase, carriers can temporarily exceed the drift diffusion velocity, an effect known as velocity overshoot~\cite{Malevich2021}. The Monte Carlo approach used by Johnston et al.~\cite{SimulationTHz} tracks individual carriers through discrete scattering events and naturally captures this ballistic regime. Since the present model assumes steady state transport from $t = 0$, it may slightly underestimate the initial rate of change of the photocurrent $\dot{J}$, and hence the high frequency content of the radiated THz pulse. However, the majority of the pulse shape is determined by the slower picosecond scale carrier recombination, which is well described by the drift-diffusion model, and the close agreement between the simulated bipolar waveform (Section~4.2) and the established literature~\cite{SimulationTHz,auston_picosecond_1984} confirms that this limitation does not significantly affect the overall results. A second simplification is the treatment of optical absorption: the carrier generation rate uses a fixed absorption coefficient $\alpha$ following Beer's law, with no dependence on the instantaneous carrier density. At high excitation fluences, band filling can reduce the effective absorption as states near the band edge become occupied, and free carrier absorption can increase the total absorption~\cite{Pettine2023}. These nonlinear effects are not included, but at the moderate fluence used in the simulations ($F = 0.1$~mJ/cm$^2$) the photo generated carrier density remains well below the level at which band filling becomes significant, so this simplification is expected to have a negligible impact. The far field computation also assumes free space propagation from the source plane to the observation point, with no refractive index, Fresnel transmission coefficient, or Snell refraction applied at the semiconductor. In practice, III-V semiconductors have a refractive index of approximately 3.5--3.7 at THz frequencies~\cite{Wu2024}, which would cause partial reflection and angular deflection of the outgoing radiation. Despite this omission, the simulated peak emission angle of $25^\circ$ (Section~4.1) falls within the experimentally measured range of $20^\circ$--$25^\circ$ reported by Mueckstein et al.~\cite{Mueckstein2015}, indicating that the intrinsic angular dependence of the photo-dember source dominates the pattern shape and that refraction introduces a quantitative correction rather than a qualitative change. Finally, the depth resolved transport solver uses a forward Euler scheme with a time step of $\Delta t = 0.5$~fs, constrained by the CFL stability condition $\Delta t \leq 0.95\,h^2/(4D)$ for the spatial grid spacing $h$ and diffusion coefficient $D$. This requires approximately $9 \times 10^7$ internal iterations for the default 45~ps simulation window; an implicit or semi implicit scheme would relax the time step constraint and potentially reduce computation time, though the current runtime of approximately one minute per observation point was judged acceptable for an interactive GUI tool.
+
+\subsection{Photo-Dember versus Built-in Field Mechanisms}
+The results in Section~4 demonstrate that both the photo-dember and built-in field mechanisms produce physically valid THz radiation within the same simulation framework, but their relative contributions depend strongly on the material system and surface conditions. In narrow bandgap semiconductors such as Fe:InGaAs, where the surface band bending is small and the mobility asymmetry between electrons and holes is large, the lateral photo-dember current is the dominant source of THz emission~\cite{Klatt2010}. This is consistent with the findings of Mueckstein et al.~\cite{Mueckstein2015}, who confirmed experimentally that the radially polarised emission pattern from Fe:InGaAs is characteristic of in plane photocurrents rather than vertical drift currents. The angular emission validation in Section~4.1, which used Fe:InGaAs parameters in photo-dember mode, supports this conclusion.
+
+In contrast, wide bandgap semiconductors such as GaAs and InP typically exhibit strong Fermi level pinning at the surface, creating a depletion region with a built-in electric field of order $10^5$--$10^6$~V/m~\cite{SimulationTHz}. In these materials, the vertical surge current driven by the depletion field dominates THz generation, producing the linearly polarised emission that is observed experimentally~\cite{auston_picosecond_1984}. The bipolar pulse waveform presented in Section~4.2 reproduces this behaviour, with the correct lobe asymmetry determined by the ratio of the laser pulse duration to the carrier recombination lifetime. Recent studies have further confirmed that surface field driven THz emission provides a sensitive probe of depletion layer properties in semiconductor surfaces~\cite{YangTonouchi2022}.
+
+The GUI presents these two mechanisms as mutually exclusive selections, reflecting the fact that each targets a different class of semiconductor material. However, the custom mechanism mode provides a route to combine both effects: a user could enter a current expression that includes both a vertical drift term proportional to $n$ and a lateral diffusion term proportional to $\nabla n$, effectively superimposing the two sources. This flexibility allows investigation of materials where both mechanisms contribute comparably, without requiring changes to the simulation engine. More broadly, the custom mode enables the exploration of new THz generation mechanisms beyond the two standard models by accepting arbitrary current density expressions as input~\cite{Kefayati2024}.
+
+%% ============================================================
+%% CONCLUSIONS
+%% ============================================================
+\section{Conclusions}
+This project developed an interactive MATLAB simulation framework for modelling terahertz pulse generation from semiconductor surfaces excited by femtosecond laser pulses. The framework integrates a drift diffusion carrier transport solver, a vectorised retarded potential far field integrator based on Jefimenko's equations, and a graphical user interface built in MATLAB App Designer, providing a single coordinated workflow from material parameter input to visualisation of temporal waveforms and spatial polarisation maps.
+
+The photo-dember model was validated by comparing the simulated angular emission pattern against the experimental data of Mueckstein et al.~\cite{Mueckstein2015}. The simulation reproduced the characteristic on axis null at $\theta = 0^\circ$, the broad emission peak at $\theta \approx 25^\circ$, and the radially polarised field structure, all consistent with the in plane diffusion current expected from an asymmetric electron hole mobility ratio. The built-in field model produced the expected bipolar THz pulse waveform with a fast sub picosecond rising lobe from the onset of carrier drift and a slower trailing lobe governed by the recombination lifetime, in agreement with established theoretical predictions~\cite{SimulationTHz,auston_picosecond_1984}. The spatial field mapping confirmed that the two mechanisms produce distinct polarisation signatures, radial for photo-dember and linear for the built-in field, providing a visual diagnostic that complements the temporal waveform analysis. The custom mechanism mode was verified by reproducing both standard modes through user defined current expressions, confirming that the runtime formula parser and far field integration pipeline operate correctly for arbitrary source distributions.
+
+Several limitations of the current implementation suggest directions for future development. Incorporating ballistic carrier transport during the first few hundred femtoseconds after excitation would improve the accuracy of the high frequency spectral content, and adding Fresnel transmission coefficients at the semiconductor air interface would refine the absolute amplitude and angular dependence of the radiated field. Replacing the forward Euler time integration with an implicit or semi implicit scheme would relax the CFL stability constraint and reduce computation time for finer spatial grids. Extending the model to include nonlinear optical effects such as band filling and free carrier absorption would broaden the range of excitation conditions over which the simulation remains quantitatively reliable. Despite these simplifications, the framework successfully captures the essential physics of both photo-dember and built-in field THz generation and provides an accessible platform for exploring how material parameters and excitation conditions shape the radiated terahertz pulse.
+
+%% ============================================================
+%% TEAM CONTRIBUTIONS
+%% ============================================================
+\section{Team Contributions}
+% TODO: List team member contributions and indicate who wrote which sections.
+%
+% Yaoqi Dong -- photo-dember effect modelling (1D, 2D, dual-carrier)
+% Yuhao Chang -- Electric field computation (retarded potentials, 2D/3D field simulation)
+% Shenglong Li -- MATLAB GUI design and integration
+
+\newpage
+\bibliography{example-references}
+\bibliographystyle{IEEEtran} % IEEE style
+
+
+
+\end{document}
